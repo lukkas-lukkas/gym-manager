@@ -34,6 +34,15 @@ class LoginTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_user_can_logout(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->post(route('logout'))
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+    }
+
     public function test_login_is_rate_limited_after_five_attempts(): void
     {
         $user = User::factory()->create();

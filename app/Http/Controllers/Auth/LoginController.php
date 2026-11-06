@@ -32,4 +32,17 @@ class LoginController extends Controller
 
         return redirect()->intended('/');
     }
+
+    /**
+     * Log the user out and invalidate the session.
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        Auth::guard('web')->logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login');
+    }
 }
