@@ -5,5 +5,8 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
         };
+        flashDataType: {
+            success?: string;
+        };
     }
 }
