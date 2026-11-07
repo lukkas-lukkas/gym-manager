@@ -4,9 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
-    Route::inertia('/', 'Welcome', [
-        'laravelVersion' => app()->version(),
-    ])->name('home');
+    Route::inertia('/', 'Dashboard')->name('home');
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });
 
