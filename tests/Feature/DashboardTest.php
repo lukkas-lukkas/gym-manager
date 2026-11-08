@@ -7,23 +7,22 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
-class ExampleTest extends TestCase
+class DashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_home(): void
+    public function test_guest_is_redirected_to_login_from_dashboard(): void
     {
         $this->get(route('home'))->assertRedirect(route('login'));
     }
 
-    public function test_authenticated_user_can_see_the_home_page(): void
+    public function test_authenticated_user_can_see_the_dashboard(): void
     {
         $this->actingAs(User::factory()->create())
             ->get(route('home'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('Welcome')
-                ->has('laravelVersion')
+                ->component('Dashboard')
                 ->where('name', config('app.name'))
             );
     }
