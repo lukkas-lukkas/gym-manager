@@ -14,7 +14,7 @@ type MenuItem = {
 const menuItems: MenuItem[] = [
     { label: 'Dashboard', href: '/', icon: 'M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10' },
     { label: 'Alunos', href: '/members', icon: 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6M22 19v-1a4 4 0 0 0-3-3.87M16 4.13a3 3 0 0 1 0 5.74' },
-    { label: 'Planos', icon: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 13h6M9 17h4' },
+    { label: 'Planos', href: '/membership-plans', icon: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 13h6M9 17h4' },
     { label: 'Receitas', icon: 'M12 19V5M5 12l7-7 7 7' },
     { label: 'Despesas', icon: 'M12 5v14M19 12l-7 7-7-7' },
     { label: 'Relatórios', icon: 'M3 3v18h18M7 15l4-4 3 3 5-6' },
@@ -23,10 +23,18 @@ const menuItems: MenuItem[] = [
 const page = usePage();
 const isMobileMenuOpen = ref(false);
 
+/**
+ * Whether the menu item points to the current page or one of its sub-pages.
+ * Matches whole path segments, so `/members` doesn't light up on `/membership-plans`.
+ */
 function isActive(href: string): boolean {
     const currentPath = page.url.split('?')[0];
 
-    return href === '/' ? currentPath === '/' : currentPath.startsWith(href);
+    if (href === '/') {
+        return currentPath === '/';
+    }
+
+    return currentPath === href || currentPath.startsWith(`${href}/`);
 }
 
 function closeMobileMenu(): void {

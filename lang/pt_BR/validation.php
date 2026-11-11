@@ -16,6 +16,8 @@ return [
     'before' => 'O campo :attribute deve ser uma data anterior a :date.',
     'date' => 'O campo :attribute deve ser uma data válida.',
     'email' => 'Informe um e-mail válido.',
+    'enum' => 'O :attribute selecionado é inválido.',
+    'integer' => 'O campo :attribute deve ser um número inteiro.',
     'max' => [
         'string' => 'O campo :attribute não pode ter mais de :max caracteres.',
     ],
@@ -42,10 +44,12 @@ return [
     */
 
     'attributes' => [
+        'billing_period' => 'período de cobrança',
         'birth_date' => 'data de nascimento',
         'email' => 'e-mail',
         'name' => 'nome',
         'password' => 'senha',
+        'price_in_cents' => 'preço',
     ],
 
 ];

@@ -19,7 +19,7 @@ class MemberStatusController extends Controller
 
         Inertia::flash('success', 'Aluno reativado.');
 
-        return redirect()->route('members.edit', $member);
+        return redirect()->route('members.show', $member);
     }
 
     /**
@@ -31,6 +31,6 @@ class MemberStatusController extends Controller
 
         Inertia::flash('success', 'Aluno desativado.');
 
-        return redirect()->route('members.edit', $member);
+        return redirect()->route('members.show', $member);
     }
 }

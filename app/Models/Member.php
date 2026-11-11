@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\EnrollmentStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\MemberFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 #[Fillable(['name', 'email', 'birth_date'])]
 class Member extends Model
@@ -28,6 +32,69 @@ class Member extends Model
             'birth_date' => 'date:Y-m-d',
             'deactivated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Every plan the member has been enrolled in, active and ended.
+     *
+     * @return HasMany<Enrollment, $this>
+     */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    /**
+     * The active or upcoming enrollment that ends last: the one a new enrollment must follow.
+     *
+     * Upcoming enrollments are saved as inactive with a start date in the future.
+     */
+    public function lastScheduledEnrollment(): ?Enrollment
+    {
+        return $this->enrollments()
+            ->where(function (Builder $query): void {
+                $query->where('status', EnrollmentStatus::Active)
+                    ->orWhere('starts_on', '>', today()->toDateString());
+            })
+            ->orderByDesc('ends_on')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * When a new enrollment starts: the day after the last scheduled enrollment ends, or today if there is none.
+     */
+    public function nextEnrollmentStartsOn(?Enrollment $lastScheduledEnrollment): CarbonImmutable
+    {
+        return $lastScheduledEnrollment === null
+            ? CarbonImmutable::today()
+            : $lastScheduledEnrollment->ends_on->toImmutable()->addDay();
+    }
+
+    /**
+     * Enroll the member in a plan, right after their last scheduled enrollment.
+     *
+     * The new enrollment is only active when the member has no active plan; otherwise it is saved
+     * as inactive and waits for its start date. The member row is locked so two simultaneous requests
+     * (a double click, two open tabs) run one after the other and never create two active enrollments.
+     */
+    public function enroll(MembershipPlan $plan): Enrollment
+    {
+        return DB::transaction(function () use ($plan): Enrollment {
+            static::query()->whereKey($this->getKey())->lockForUpdate()->first();
+
+            $startsOn = $this->nextEnrollmentStartsOn($this->lastScheduledEnrollment());
+            $hasActiveEnrollment = $this->enrollments()->where('status', EnrollmentStatus::Active)->exists();
+
+            return $this->enrollments()->create([
+                'membership_plan_id' => $plan->id,
+                'starts_on' => $startsOn,
+                'ends_on' => $startsOn->addMonthsNoOverflow($plan->billing_period->months()),
+                'status' => $hasActiveEnrollment || $startsOn->isFuture()
+                    ? EnrollmentStatus::Inactive
+                    : EnrollmentStatus::Active,
+            ]);
+        });
     }
 
     /**

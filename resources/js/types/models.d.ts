@@ -22,3 +22,37 @@ export type Paginated<T> = {
     prev_page_url: string | null;
     next_page_url: string | null;
 };
+
+export type BillingPeriod = 'monthly' | 'quarterly' | 'semiannual' | 'yearly';
+
+export type BillingPeriodOption = {
+    value: BillingPeriod;
+    label: string;
+};
+
+export type MembershipPlan = {
+    id: number;
+    name: string;
+    price_in_cents: number;
+    billing_period: BillingPeriod;
+    /** Translated period name (e.g. "Mensal"), ready to display. */
+    billing_period_label: string;
+};
+
+export type EnrollmentStatus = 'active' | 'inactive';
+
+/**
+ * One entry of a member's plan history, with the plan data already joined in.
+ */
+export type MemberEnrollment = {
+    id: number;
+    plan_name: string;
+    price_in_cents: number;
+    billing_period_label: string;
+    /** Date in `YYYY-MM-DD` format. */
+    starts_on: string;
+    /** Date in `YYYY-MM-DD` format. */
+    ends_on: string;
+    /** `active` for the member's current plan; every other enrollment is `inactive`. */
+    status: EnrollmentStatus;
+};

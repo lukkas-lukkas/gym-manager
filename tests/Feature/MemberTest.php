@@ -22,6 +22,7 @@ class MemberTest extends TestCase
 
         $member = Member::factory()->create();
 
+        $this->get(route('members.show', $member))->assertRedirect(route('login'));
         $this->get(route('members.edit', $member))->assertRedirect(route('login'));
         $this->put(route('members.update', $member))->assertRedirect(route('login'));
     }
@@ -107,6 +108,35 @@ class MemberTest extends TestCase
                 'birth_date' => now()->addDay()->toDateString(),
             ])
             ->assertSessionHasErrors(['birth_date' => 'O campo data de nascimento deve ser uma data anterior a hoje.']);
+    }
+
+    public function test_details_page_shows_the_member_data(): void
+    {
+        $member = Member::factory()->create([
+            'name' => 'Maria Silva',
+            'email' => 'maria@example.com',
+            'birth_date' => '1995-03-10',
+            'deactivated_at' => '2026-10-01 12:00:00',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('members.show', $member))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('members/Show')
+                ->where('member.id', $member->id)
+                ->where('member.name', 'Maria Silva')
+                ->where('member.email', 'maria@example.com')
+                ->where('member.birth_date', '1995-03-10')
+                ->where('member.deactivated_at', $member->deactivated_at->toIso8601String())
+            );
+    }
+
+    public function test_details_page_of_a_missing_member_returns_not_found(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('members.show', 999))
+            ->assertNotFound();
     }
 
     public function test_edit_page_shows_the_member_data(): void

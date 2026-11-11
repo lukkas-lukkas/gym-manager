@@ -69,6 +69,19 @@ class MemberController extends Controller
     }
 
     /**
+     * Show the member's details.
+     */
+    public function show(Member $member): Response
+    {
+        return Inertia::render('members/Show', [
+            'member' => $member->only(['id', 'name', 'email']) + [
+                'birth_date' => $member->birth_date->toDateString(),
+                'deactivated_at' => $member->deactivated_at?->toIso8601String(),
+            ],
+        ]);
+    }
+
+    /**
      * Show the form for editing a member.
      */
     public function edit(Member $member): Response

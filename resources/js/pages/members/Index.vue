@@ -142,10 +142,10 @@ function formatDate(isoDate: string): string {
             <ul class="divide-y divide-gray-200 md:hidden">
                 <li v-for="member in members.data" :key="member.id" class="flex items-start justify-between gap-4 p-4">
                     <div class="flex min-w-0 flex-col gap-1">
-                        <span class="font-medium text-gray-900">
+                        <Link :href="`/members/${member.id}`" class="font-medium text-gray-900 hover:underline">
                             <span class="mr-1 font-normal text-gray-500">#{{ member.id }}</span>
                             {{ member.name }}
-                        </span>
+                        </Link>
                         <span class="truncate text-sm text-gray-600">{{ member.email }}</span>
                         <span class="text-sm text-gray-500">Nascimento: {{ formatDate(member.birth_date) }}</span>
                     </div>
@@ -172,7 +172,9 @@ function formatDate(isoDate: string): string {
                 <tbody class="divide-y divide-gray-200">
                     <tr v-for="member in members.data" :key="member.id" class="hover:bg-gray-50">
                         <td class="px-6 py-4 text-gray-500 tabular-nums">#{{ member.id }}</td>
-                        <td class="px-6 py-4 font-medium text-gray-900">{{ member.name }}</td>
+                        <td class="px-6 py-4 font-medium text-gray-900">
+                            <Link :href="`/members/${member.id}`" class="hover:underline">{{ member.name }}</Link>
+                        </td>
                         <td class="px-6 py-4 text-gray-600">{{ member.email }}</td>
                         <td class="px-6 py-4 text-gray-600">{{ formatDate(member.birth_date) }}</td>
                         <td class="px-6 py-4 text-right">

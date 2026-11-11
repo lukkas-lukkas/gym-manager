@@ -31,7 +31,7 @@ class MemberStatusTest extends TestCase
 
         $this->actingAs(User::factory()->create())
             ->post(route('members.deactivate', $member))
-            ->assertRedirect(route('members.edit', $member))
+            ->assertRedirect(route('members.show', $member))
             ->assertInertiaFlash('success', 'Aluno desativado.');
 
         $member->refresh();
@@ -45,7 +45,7 @@ class MemberStatusTest extends TestCase
 
         $this->actingAs(User::factory()->create())
             ->post(route('members.deactivate', $member))
-            ->assertRedirect(route('members.edit', $member));
+            ->assertRedirect(route('members.show', $member));
 
         $this->assertSame('2026-01-10 08:00:00', $member->fresh()->deactivated_at->toDateTimeString());
     }
@@ -56,18 +56,18 @@ class MemberStatusTest extends TestCase
 
         $this->actingAs(User::factory()->create())
             ->post(route('members.activate', $member))
-            ->assertRedirect(route('members.edit', $member))
+            ->assertRedirect(route('members.show', $member))
             ->assertInertiaFlash('success', 'Aluno reativado.');
 
         $this->assertTrue($member->fresh()->isActive());
     }
 
-    public function test_edit_page_exposes_the_member_status(): void
+    public function test_details_page_exposes_the_member_status(): void
     {
         $member = Member::factory()->create(['deactivated_at' => '2026-01-10 08:00:00']);
 
         $this->actingAs(User::factory()->create())
-            ->get(route('members.edit', $member))
+            ->get(route('members.show', $member))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('member.deactivated_at', $member->deactivated_at->toIso8601String())
             );
