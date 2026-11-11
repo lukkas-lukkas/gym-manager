@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberEnrollmentController;
 use App\Http\Controllers\MembershipPlanController;
@@ -18,6 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/members/{member}/enrollments', [MemberEnrollmentController::class, 'store'])->name('members.enrollments.store');
     Route::resource('membership-plans', MembershipPlanController::class)->only(['index', 'create', 'store', 'edit', 'update']);
     Route::post('/membership-plans/{membershipPlan}/deactivate', [MembershipPlanStatusController::class, 'deactivate'])->name('membership-plans.deactivate');
+    Route::resource('expenses', ExpenseController::class)->only(['index', 'create', 'store']);
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });
 

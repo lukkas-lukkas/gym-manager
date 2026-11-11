@@ -16,7 +16,7 @@ const menuItems: MenuItem[] = [
     { label: 'Alunos', href: '/members', icon: 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6M22 19v-1a4 4 0 0 0-3-3.87M16 4.13a3 3 0 0 1 0 5.74' },
     { label: 'Planos', href: '/membership-plans', icon: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 13h6M9 17h4' },
     { label: 'Receitas', icon: 'M12 19V5M5 12l7-7 7 7' },
-    { label: 'Despesas', icon: 'M12 5v14M19 12l-7 7-7-7' },
+    { label: 'Despesas', href: '/expenses', icon: 'M12 5v14M19 12l-7 7-7-7' },
     { label: 'Relatórios', icon: 'M3 3v18h18M7 15l4-4 3 3 5-6' },
 ];
 

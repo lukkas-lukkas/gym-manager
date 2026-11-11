@@ -15,6 +15,7 @@ return [
     'after' => 'O campo :attribute deve ser uma data posterior a :date.',
     'before' => 'O campo :attribute deve ser uma data anterior a :date.',
     'date' => 'O campo :attribute deve ser uma data válida.',
+    'date_format' => 'O campo :attribute deve ser uma data válida.',
     'email' => 'Informe um e-mail válido.',
     'enum' => 'O :attribute selecionado é inválido.',
     'integer' => 'O campo :attribute deve ser um número inteiro.',
@@ -44,9 +45,13 @@ return [
     */
 
     'attributes' => [
+        'amount_in_cents' => 'valor',
         'billing_period' => 'período de cobrança',
         'birth_date' => 'data de nascimento',
+        'description' => 'descrição',
+        'due_on' => 'vencimento',
         'email' => 'e-mail',
+        'months' => 'meses',
         'name' => 'nome',
         'password' => 'senha',
         'price_in_cents' => 'preço',
