@@ -51,6 +51,7 @@ return [
         'description' => 'descrição',
         'due_on' => 'vencimento',
         'email' => 'e-mail',
+        'month' => 'mês',
         'months' => 'meses',
         'name' => 'nome',
         'password' => 'senha',

@@ -56,3 +56,16 @@ export type MemberEnrollment = {
     /** `active` for the member's current plan; every other enrollment is `inactive`. */
     status: EnrollmentStatus;
 };
+
+export type ExpenseStatus = 'pending' | 'paid';
+
+export type Expense = {
+    id: number;
+    description: string;
+    amount_in_cents: number;
+    /** Date in `YYYY-MM-DD` format. */
+    due_on: string;
+    status: ExpenseStatus;
+    /** Translated status (e.g. "Pendente"), ready to display. */
+    status_label: string;
+};

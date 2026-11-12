@@ -8,6 +8,8 @@ use App\Enums\ExpenseStatus;
 use Carbon\CarbonImmutable;
 use Database\Factories\ExpenseFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +32,22 @@ class Expense extends Model
             'due_on' => 'date:Y-m-d',
             'status' => ExpenseStatus::class,
         ];
+    }
+
+    /**
+     * Only expenses due within the month of the given date.
+     *
+     * Compares the plain `due_on` column with a range, so the `due_on` index can be used.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function dueIn(Builder $query, CarbonImmutable $month): void
+    {
+        $query->whereBetween('due_on', [
+            $month->startOfMonth()->toDateString(),
+            $month->endOfMonth()->toDateString(),
+        ]);
     }
 
     /**

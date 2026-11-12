@@ -8,17 +8,45 @@ use App\Http\Requests\StoreExpenseRequest;
 use App\Models\Expense;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ExpenseController extends Controller
 {
     /**
-     * Display the expenses list. Empty for now: it only gives the create flow a place to land.
+     * Display the expenses due in one month (`?month=YYYY-MM`, current month by default), oldest due date first.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return Inertia::render('expenses/Index');
+        $validated = $request->validate([
+            'month' => ['nullable', 'date_format:Y-m'],
+        ]);
+
+        $month = isset($validated['month'])
+            ? CarbonImmutable::createFromFormat('Y-m', $validated['month'])->startOfMonth()
+            : CarbonImmutable::today()->startOfMonth();
+
+        return Inertia::render('expenses/Index', [
+            'month' => $month->format('Y-m'),
+            'previousMonth' => $month->subMonthNoOverflow()->format('Y-m'),
+            'nextMonth' => $month->addMonthNoOverflow()->format('Y-m'),
+            'expenses' => Expense::query()
+                ->select(['id', 'description', 'amount_in_cents', 'due_on', 'status'])
+                ->dueIn($month)
+                ->orderBy('due_on')
+                ->orderBy('id')
+                ->paginate(15)
+                ->withQueryString()
+                ->through(fn (Expense $expense): array => [
+                    'id' => $expense->id,
+                    'description' => $expense->description,
+                    'amount_in_cents' => $expense->amount_in_cents,
+                    'due_on' => $expense->due_on->toDateString(),
+                    'status' => $expense->status->value,
+                    'status_label' => $expense->status->label(),
+                ]),
+        ]);
     }
 
     /**

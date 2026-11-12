@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Expense;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -21,12 +22,85 @@ class ExpenseTest extends TestCase
         $this->post(route('expenses.store'))->assertRedirect(route('login'));
     }
 
-    public function test_index_page_is_rendered(): void
+    public function test_index_shows_the_current_month_by_default(): void
     {
+        $this->travelTo('2026-11-15 10:00:00');
+
+        Expense::factory()->create(['description' => 'Luz', 'due_on' => '2026-11-30']);
+        Expense::factory()->create(['description' => 'Aluguel', 'due_on' => '2026-11-01', 'amount_in_cents' => 500_000]);
+        Expense::factory()->paid()->create(['description' => 'Internet', 'due_on' => '2026-11-10']);
+        Expense::factory()->create(['due_on' => '2026-10-31']);
+        Expense::factory()->create(['due_on' => '2026-12-01']);
+
         $this->actingAs(User::factory()->create())
             ->get(route('expenses.index'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('expenses/Index'));
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('expenses/Index')
+                ->where('month', '2026-11')
+                ->where('previousMonth', '2026-10')
+                ->where('nextMonth', '2026-12')
+                ->has('expenses.data', 3)
+                ->where('expenses.data.0.description', 'Aluguel')
+                ->where('expenses.data.0.amount_in_cents', 500_000)
+                ->where('expenses.data.0.due_on', '2026-11-01')
+                ->where('expenses.data.0.status', 'pending')
+                ->where('expenses.data.0.status_label', 'Pendente')
+                ->where('expenses.data.1.description', 'Internet')
+                ->where('expenses.data.1.status_label', 'Pago')
+                ->where('expenses.data.2.description', 'Luz')
+            );
+    }
+
+    public function test_index_shows_the_month_from_the_url(): void
+    {
+        Expense::factory()->create(['description' => 'IPTU', 'due_on' => '2027-01-31']);
+        Expense::factory()->create(['due_on' => '2027-02-01']);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('expenses.index', ['month' => '2027-01']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('month', '2027-01')
+                ->where('previousMonth', '2026-12')
+                ->where('nextMonth', '2027-02')
+                ->has('expenses.data', 1)
+                ->where('expenses.data.0.description', 'IPTU')
+            );
+    }
+
+    public function test_index_is_paginated_keeping_the_month_in_the_links(): void
+    {
+        Expense::factory(16)->create(['due_on' => '2027-03-10']);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('expenses.index', ['month' => '2027-03']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('expenses.data', 15)
+                ->where('expenses.total', 16)
+                ->where('expenses.next_page_url', fn (string $url): bool => str_contains($url, 'month=2027-03') && str_contains($url, 'page=2'))
+            );
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function invalidMonths(): array
+    {
+        return [
+            'month 13' => ['2026-13'],
+            'full date' => ['2026-11-01'],
+            'text' => ['novembro'],
+        ];
+    }
+
+    #[DataProvider('invalidMonths')]
+    public function test_index_rejects_an_invalid_month(string $month): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('expenses.index', ['month' => $month]))
+            ->assertSessionHasErrors('month');
     }
 
     public function test_create_page_sends_the_repetition_limit(): void

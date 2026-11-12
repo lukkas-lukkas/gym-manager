@@ -11,4 +11,15 @@ enum ExpenseStatus: string
 {
     case Pending = 'pending';
     case Paid = 'paid';
+
+    /**
+     * Human-readable name shown in the UI.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Pending => 'Pendente',
+            self::Paid => 'Pago',
+        };
+    }
 }

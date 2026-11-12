@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('status', 20);
             $table->timestamps();
 
-            $table->index(['status', 'due_on']);
+            $table->index('due_on');
         });
     }
 
