@@ -10,6 +10,7 @@ use App\Enums\RevenueStatus;
 use App\Models\Enrollment;
 use App\Models\Member;
 use App\Models\MembershipPlan;
+use App\Models\Revenue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -61,11 +62,49 @@ class MemberEnrollmentTest extends TestCase
                     'starts_on' => '2026-06-10',
                     'ends_on' => '2027-06-10',
                     'status' => 'active',
+                    'revenue' => null,
                 ])
                 ->where('enrollments.data.1.id', $endedEnrollment->id)
                 ->where('enrollments.data.1.ends_on', '2026-06-10')
                 ->where('enrollments.data.1.status', 'inactive')
             );
+    }
+
+    public function test_history_shows_the_payment_of_each_plan_with_the_price_of_the_enrollment_day(): void
+    {
+        $this->travelTo('2026-11-10 12:00:00');
+
+        $member = Member::factory()->create();
+        $plan = MembershipPlan::factory()->create(['price_in_cents' => 15_000]);
+        $enrollment = Enrollment::factory()->for($member)->for($plan)->create(['starts_on' => '2026-11-05', 'ends_on' => '2026-12-05']);
+        $revenue = Revenue::factory()->for($enrollment)->create(['price_in_cents' => 12_000, 'due_on' => '2026-11-05']);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('members.enrollments.index', $member))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('enrollments.data.0.price_in_cents', 12_000)
+                ->where('enrollments.data.0.revenue', [
+                    'id' => $revenue->id,
+                    'due_on' => '2026-11-05',
+                    'status' => 'pending',
+                    'status_label' => 'Pendente',
+                    'is_overdue' => true,
+                    'paid_at' => null,
+                ])
+            );
+    }
+
+    public function test_history_does_not_mark_a_revenue_due_today_as_overdue(): void
+    {
+        $this->travelTo('2026-11-10 12:00:00');
+
+        $member = Member::factory()->create();
+        $enrollment = Enrollment::factory()->for($member)->create(['starts_on' => '2026-11-10', 'ends_on' => '2026-12-10']);
+        Revenue::factory()->for($enrollment)->create(['due_on' => '2026-11-10']);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('members.enrollments.index', $member))
+            ->assertInertia(fn (Assert $page) => $page->where('enrollments.data.0.revenue.is_overdue', false));
     }
 
     public function test_history_keeps_showing_plans_that_were_deactivated(): void

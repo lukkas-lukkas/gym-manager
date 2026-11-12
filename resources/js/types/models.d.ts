@@ -55,6 +55,22 @@ export type MemberEnrollment = {
     ends_on: string;
     /** `active` for the member's current plan; every other enrollment is `inactive`. */
     status: EnrollmentStatus;
+    /** The charge for this plan, or `null` for enrollments created before revenues existed. */
+    revenue: EnrollmentRevenue | null;
+};
+
+export type RevenueStatus = 'pending' | 'paid';
+
+export type EnrollmentRevenue = {
+    id: number;
+    /** Date in `YYYY-MM-DD` format. */
+    due_on: string;
+    status: RevenueStatus;
+    status_label: string;
+    /** Pending and past its due date. */
+    is_overdue: boolean;
+    /** ISO 8601 date-time, or `null` while not paid. */
+    paid_at: string | null;
 };
 
 export type ExpenseStatus = 'pending' | 'paid';

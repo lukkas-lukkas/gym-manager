@@ -42,4 +42,33 @@ class Revenue extends Model
     {
         return $this->belongsTo(Member::class);
     }
+
+    /**
+     * A pending revenue whose due date has passed. It is worked out when read, so it is never out of date.
+     */
+    public function isOverdue(): bool
+    {
+        return $this->status === RevenueStatus::Pending && $this->due_on->isBefore(today());
+    }
+
+    /**
+     * Mark the revenue as paid now, returning whether it was still pending.
+     *
+     * The update only matches a pending row, so a double click or two open tabs pay it once and keep the first `paid_at`.
+     */
+    public function markAsPaid(): bool
+    {
+        $paidAt = now();
+
+        $wasPending = static::query()
+            ->whereKey($this->getKey())
+            ->where('status', RevenueStatus::Pending)
+            ->update(['status' => RevenueStatus::Paid, 'paid_at' => $paidAt]) === 1;
+
+        if ($wasPending) {
+            $this->forceFill(['status' => RevenueStatus::Paid, 'paid_at' => $paidAt])->syncOriginal();
+        }
+
+        return $wasPending;
+    }
 }

@@ -15,7 +15,9 @@ use Inertia\Response;
 class MemberEnrollmentController extends Controller
 {
     /**
-     * Display the member's plan history (the "Planos" tab of the member page), most recent first.
+     * Display the member's plan history (the "Planos" tab of the member page), most recent first, with the
+     * payment of each plan. The price comes from the revenue, which keeps the price of the enrollment day;
+     * enrollments created before revenues existed fall back to the current plan price.
      */
     public function index(Member $member): Response
     {
@@ -25,18 +27,29 @@ class MemberEnrollmentController extends Controller
             ],
             'enrollments' => $member->enrollments()
                 ->select(['id', 'member_id', 'membership_plan_id', 'starts_on', 'ends_on', 'status'])
-                ->with('membershipPlan:id,name,price_in_cents,billing_period')
+                ->with([
+                    'membershipPlan:id,name,price_in_cents,billing_period',
+                    'revenue:id,enrollment_id,price_in_cents,due_on,status,paid_at',
+                ])
                 ->orderByDesc('starts_on')
                 ->orderByDesc('id')
                 ->paginate(15)
                 ->through(fn (Enrollment $enrollment): array => [
                     'id' => $enrollment->id,
                     'plan_name' => $enrollment->membershipPlan->name,
-                    'price_in_cents' => $enrollment->membershipPlan->price_in_cents,
+                    'price_in_cents' => $enrollment->revenue->price_in_cents ?? $enrollment->membershipPlan->price_in_cents,
                     'billing_period_label' => $enrollment->membershipPlan->billing_period->label(),
                     'starts_on' => $enrollment->starts_on->toDateString(),
                     'ends_on' => $enrollment->ends_on->toDateString(),
                     'status' => $enrollment->status->value,
+                    'revenue' => $enrollment->revenue === null ? null : [
+                        'id' => $enrollment->revenue->id,
+                        'due_on' => $enrollment->revenue->due_on->toDateString(),
+                        'status' => $enrollment->revenue->status->value,
+                        'status_label' => $enrollment->revenue->status->label(),
+                        'is_overdue' => $enrollment->revenue->isOverdue(),
+                        'paid_at' => $enrollment->revenue->paid_at?->toIso8601String(),
+                    ],
                 ]),
         ]);
     }
