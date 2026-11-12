@@ -98,6 +98,60 @@ class Member extends Model
     }
 
     /**
+     * Close the active enrollment once its end date has passed and move the member to their next plan.
+     *
+     * The next plan is the upcoming enrollment that follows the expired one. When there is none, an active
+     * member is re-enrolled in the same plan starting today. A deactivated member only has the enrollment
+     * closed. It loops so a member whose upcoming enrollment also expired (the scheduler was down for days)
+     * catches up in one run. The member row is locked so this never races with a manual enrollment.
+     */
+    public function rollOverExpiredEnrollment(): void
+    {
+        DB::transaction(function (): void {
+            $lockedMember = static::query()->whereKey($this->getKey())->lockForUpdate()->firstOrFail();
+
+            while ($expiredEnrollment = $this->expiredActiveEnrollment()) {
+                $expiredEnrollment->update(['status' => EnrollmentStatus::Inactive]);
+
+                if (! $lockedMember->isActive()) {
+                    return;
+                }
+
+                $nextEnrollment = $this->enrollments()
+                    ->where('status', EnrollmentStatus::Inactive)
+                    ->where('starts_on', '>', $expiredEnrollment->ends_on->toDateString())
+                    ->where('starts_on', '<=', today()->toDateString())
+                    ->orderBy('starts_on')
+                    ->orderBy('id')
+                    ->first();
+
+                if ($nextEnrollment !== null) {
+                    $nextEnrollment->update(['status' => EnrollmentStatus::Active]);
+
+                    continue;
+                }
+
+                if ($this->lastScheduledEnrollment() === null) {
+                    $this->enroll($expiredEnrollment->membershipPlan);
+                }
+
+                return;
+            }
+        });
+    }
+
+    /**
+     * The active enrollment whose last day was before today, if any.
+     */
+    private function expiredActiveEnrollment(): ?Enrollment
+    {
+        return $this->enrollments()
+            ->where('status', EnrollmentStatus::Active)
+            ->where('ends_on', '<', today()->toDateString())
+            ->first();
+    }
+
+    /**
      * Whether the member is currently active (not deactivated).
      */
     public function isActive(): bool
