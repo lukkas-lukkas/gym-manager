@@ -55,6 +55,7 @@ return [
         'months' => 'meses',
         'name' => 'nome',
         'password' => 'senha',
+        'status' => 'status',
         'price_in_cents' => 'preço',
     ],
 

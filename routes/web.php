@@ -19,7 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/members/{member}/enrollments', [MemberEnrollmentController::class, 'store'])->name('members.enrollments.store');
     Route::resource('membership-plans', MembershipPlanController::class)->only(['index', 'create', 'store', 'edit', 'update']);
     Route::post('/membership-plans/{membershipPlan}/deactivate', [MembershipPlanStatusController::class, 'deactivate'])->name('membership-plans.deactivate');
-    Route::resource('expenses', ExpenseController::class)->only(['index', 'create', 'store']);
+    Route::resource('expenses', ExpenseController::class)->only(['index', 'create', 'store', 'edit', 'update']);
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 });
 

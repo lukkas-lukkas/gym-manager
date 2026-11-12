@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\ExpenseStatus;
 use App\Models\Expense;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,6 +21,11 @@ class ExpenseTest extends TestCase
         $this->get(route('expenses.index'))->assertRedirect(route('login'));
         $this->get(route('expenses.create'))->assertRedirect(route('login'));
         $this->post(route('expenses.store'))->assertRedirect(route('login'));
+
+        $expense = Expense::factory()->create();
+
+        $this->get(route('expenses.edit', $expense))->assertRedirect(route('login'));
+        $this->put(route('expenses.update', $expense))->assertRedirect(route('login'));
     }
 
     public function test_index_shows_the_current_month_by_default(): void
@@ -123,7 +129,7 @@ class ExpenseTest extends TestCase
                 'due_on' => '2026-11-20',
                 'months' => '1',
             ])
-            ->assertRedirect(route('expenses.index'))
+            ->assertRedirect(route('expenses.index', ['month' => '2026-11']))
             ->assertInertiaFlash('success', 'Despesa cadastrada com sucesso.');
 
         $this->assertDatabaseCount('expenses', 1);
@@ -145,7 +151,7 @@ class ExpenseTest extends TestCase
                 'months' => '1',
                 'status' => 'paid',
             ])
-            ->assertRedirect(route('expenses.index'));
+            ->assertRedirect(route('expenses.index', ['month' => '2026-11']));
 
         $this->assertDatabaseHas('expenses', ['description' => 'Aluguel', 'status' => 'pending']);
         $this->assertDatabaseMissing('expenses', ['status' => 'paid']);
@@ -160,7 +166,7 @@ class ExpenseTest extends TestCase
                 'due_on' => '2027-01-31',
                 'months' => '4',
             ])
-            ->assertRedirect(route('expenses.index'))
+            ->assertRedirect(route('expenses.index', ['month' => '2027-01']))
             ->assertInertiaFlash('success', '4 despesas cadastradas com sucesso.');
 
         $this->assertDatabaseCount('expenses', 4);
@@ -200,10 +206,21 @@ class ExpenseTest extends TestCase
             'amount above maximum' => [['amount_in_cents' => '10000000'], 'amount_in_cents', 'O valor não pode passar de R$ 99.999,99.'],
             'invalid date' => [['due_on' => '2026-02-30'], 'due_on', 'O campo vencimento deve ser uma data válida.'],
             'date in another format' => [['due_on' => '20/11/2026'], 'due_on', 'O campo vencimento deve ser uma data válida.'],
+            'description too long' => [['description' => str_repeat('a', 256)], 'description', 'O campo descrição não pode ter mais de 255 caracteres.'],
+        ];
+    }
+
+    /**
+     * Repetition only exists when creating, so these cases are not used by the update tests.
+     *
+     * @return array<string, array{array<string, string>, string, string}>
+     */
+    public static function invalidRepetitions(): array
+    {
+        return [
             'zero months' => [['months' => '0'], 'months', 'Repita por pelo menos 1 mês.'],
             'months above maximum' => [['months' => '25'], 'months', 'Repita por no máximo 24 meses.'],
             'decimal months' => [['months' => '1.5'], 'months', 'O campo meses deve ser um número inteiro.'],
-            'description too long' => [['description' => str_repeat('a', 256)], 'description', 'O campo descrição não pode ter mais de 255 caracteres.'],
         ];
     }
 
@@ -211,6 +228,7 @@ class ExpenseTest extends TestCase
      * @param  array<string, string>  $override
      */
     #[DataProvider('invalidFields')]
+    #[DataProvider('invalidRepetitions')]
     public function test_fields_are_validated(array $override, string $field, string $expectedError): void
     {
         $this->actingAs(User::factory()->create())
@@ -224,5 +242,139 @@ class ExpenseTest extends TestCase
             ->assertSessionHasErrors([$field => $expectedError]);
 
         $this->assertDatabaseCount('expenses', 0);
+    }
+
+    public function test_edit_page_shows_the_expense_data(): void
+    {
+        $expense = Expense::factory()->paid()->create([
+            'description' => 'Conta de água',
+            'amount_in_cents' => 12_345,
+            'due_on' => '2026-11-12',
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('expenses.edit', $expense))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('expenses/Edit')
+                ->where('expense', [
+                    'id' => $expense->id,
+                    'description' => 'Conta de água',
+                    'amount_in_cents' => 12_345,
+                    'due_on' => '2026-11-12',
+                    'status' => 'paid',
+                    'status_label' => 'Pago',
+                ])
+                ->where('statuses', [
+                    ['value' => 'pending', 'label' => 'Pendente'],
+                    ['value' => 'paid', 'label' => 'Pago'],
+                ])
+            );
+    }
+
+    public function test_editing_a_missing_expense_returns_not_found(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('expenses.edit', 999))
+            ->assertNotFound();
+    }
+
+    public function test_expense_can_be_updated_and_redirects_to_its_new_month(): void
+    {
+        $expense = Expense::factory()->create(['due_on' => '2026-11-20']);
+        $otherExpense = Expense::factory()->create(['description' => 'Outra parcela']);
+
+        $this->actingAs(User::factory()->create())
+            ->put(route('expenses.update', $expense), [
+                'description' => 'Conta de luz atualizada',
+                'amount_in_cents' => '40000',
+                'due_on' => '2026-12-05',
+                'status' => 'pending',
+            ])
+            ->assertRedirect(route('expenses.index', ['month' => '2026-12']))
+            ->assertInertiaFlash('success', 'Despesa atualizada com sucesso.');
+
+        $expense->refresh();
+
+        $this->assertSame('Conta de luz atualizada', $expense->description);
+        $this->assertSame(40_000, $expense->amount_in_cents);
+        $this->assertSame('2026-12-05', $expense->due_on->toDateString());
+        $this->assertSame('Outra parcela', $otherExpense->fresh()->description);
+    }
+
+    public function test_expense_can_be_marked_as_paid_and_back_to_pending(): void
+    {
+        $expense = Expense::factory()->create(['due_on' => '2026-11-05']);
+        $payload = [
+            'description' => $expense->description,
+            'amount_in_cents' => (string) $expense->amount_in_cents,
+            'due_on' => '2026-11-05',
+        ];
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->put(route('expenses.update', $expense), [...$payload, 'status' => 'paid'])
+            ->assertRedirect(route('expenses.index', ['month' => '2026-11']));
+
+        $this->assertSame(ExpenseStatus::Paid, $expense->fresh()->status);
+
+        $this->actingAs($user)
+            ->put(route('expenses.update', $expense), [...$payload, 'status' => 'pending'])
+            ->assertRedirect(route('expenses.index', ['month' => '2026-11']));
+
+        $this->assertSame(ExpenseStatus::Pending, $expense->fresh()->status);
+    }
+
+    public function test_status_must_be_a_known_value(): void
+    {
+        $expense = Expense::factory()->create();
+
+        $this->actingAs(User::factory()->create())
+            ->put(route('expenses.update', $expense), [
+                'description' => 'Aluguel',
+                'amount_in_cents' => '500000',
+                'due_on' => '2026-11-05',
+                'status' => 'cancelled',
+            ])
+            ->assertSessionHasErrors(['status' => 'O status selecionado é inválido.']);
+
+        $this->assertSame(ExpenseStatus::Pending, $expense->fresh()->status);
+    }
+
+    public function test_update_required_fields_are_validated(): void
+    {
+        $expense = Expense::factory()->create(['description' => 'Original']);
+
+        $this->actingAs(User::factory()->create())
+            ->put(route('expenses.update', $expense), [])
+            ->assertSessionHasErrors([
+                'description' => 'O campo descrição é obrigatório.',
+                'amount_in_cents' => 'O campo valor é obrigatório.',
+                'due_on' => 'O campo vencimento é obrigatório.',
+                'status' => 'O campo status é obrigatório.',
+            ]);
+
+        $this->assertSame('Original', $expense->fresh()->description);
+    }
+
+    /**
+     * @param  array<string, string>  $override
+     */
+    #[DataProvider('invalidFields')]
+    public function test_update_fields_are_validated(array $override, string $field, string $expectedError): void
+    {
+        $expense = Expense::factory()->create(['description' => 'Original']);
+
+        $this->actingAs(User::factory()->create())
+            ->put(route('expenses.update', $expense), [
+                'description' => 'Conta de luz',
+                'amount_in_cents' => '35090',
+                'due_on' => '2026-11-20',
+                'status' => 'pending',
+                ...$override,
+            ])
+            ->assertSessionHasErrors([$field => $expectedError]);
+
+        $this->assertSame('Original', $expense->fresh()->description);
     }
 }

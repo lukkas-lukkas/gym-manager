@@ -59,6 +59,11 @@ export type MemberEnrollment = {
 
 export type ExpenseStatus = 'pending' | 'paid';
 
+export type ExpenseStatusOption = {
+    value: ExpenseStatus;
+    label: string;
+};
+
 export type Expense = {
     id: number;
     description: string;

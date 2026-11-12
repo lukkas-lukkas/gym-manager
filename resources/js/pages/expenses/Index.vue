@@ -94,6 +94,12 @@ const monthLabel = computed((): string => {
                         >
                             {{ expense.status_label }}
                         </span>
+                        <Link
+                            :href="`/expenses/${expense.id}/edit`"
+                            class="mt-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                        >
+                            Editar
+                        </Link>
                     </div>
                 </li>
             </ul>
@@ -106,6 +112,7 @@ const monthLabel = computed((): string => {
                         <th scope="col" class="px-6 py-3 font-semibold">Vencimento</th>
                         <th scope="col" class="px-6 py-3 font-semibold">Status</th>
                         <th scope="col" class="px-6 py-3 text-right font-semibold">Valor</th>
+                        <th scope="col" class="px-6 py-3"><span class="sr-only">Ações</span></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -121,6 +128,15 @@ const monthLabel = computed((): string => {
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right text-gray-900 tabular-nums">{{ formatAmount(expense.amount_in_cents) }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <Link
+                                :href="`/expenses/${expense.id}/edit`"
+                                class="font-medium text-gray-700 hover:text-gray-900 hover:underline"
+                                :aria-label="`Editar ${expense.description}`"
+                            >
+                                Editar
+                            </Link>
+                        </td>
                     </tr>
                 </tbody>
             </table>

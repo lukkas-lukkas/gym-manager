@@ -22,4 +22,17 @@ enum ExpenseStatus: string
             self::Paid => 'Pago',
         };
     }
+
+    /**
+     * All statuses as select options, in the order they are declared.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    public static function options(): array
+    {
+        return array_map(
+            fn (self $status): array => ['value' => $status->value, 'label' => $status->label()],
+            self::cases(),
+        );
+    }
 }
