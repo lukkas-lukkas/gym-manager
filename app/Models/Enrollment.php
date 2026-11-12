@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * A period a member spent on a membership plan.
@@ -55,5 +56,13 @@ class Enrollment extends Model
     public function membershipPlan(): BelongsTo
     {
         return $this->belongsTo(MembershipPlan::class);
+    }
+
+    /**
+     * @return HasOne<Revenue, $this>
+     */
+    public function revenue(): HasOne
+    {
+        return $this->hasOne(Revenue::class);
     }
 }

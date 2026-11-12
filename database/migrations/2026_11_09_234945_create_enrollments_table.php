@@ -18,6 +18,9 @@ return new class extends Migration
             $table->date('ends_on');
             $table->string('status', 20);
             $table->timestamps();
+
+            $table->index(['member_id', 'status', 'ends_on']);
+            $table->index(['status', 'ends_on']);
         });
     }
 

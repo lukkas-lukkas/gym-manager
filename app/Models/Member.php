@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\RevenueStatus;
 use Carbon\CarbonImmutable;
 use Database\Factories\MemberFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -45,6 +46,14 @@ class Member extends Model
     }
 
     /**
+     * @return HasMany<Revenue, $this>
+     */
+    public function revenues(): HasMany
+    {
+        return $this->hasMany(Revenue::class);
+    }
+
+    /**
      * The active or upcoming enrollment that ends last: the one a new enrollment must follow.
      *
      * Upcoming enrollments are saved as inactive with a start date in the future.
@@ -72,11 +81,13 @@ class Member extends Model
     }
 
     /**
-     * Enroll the member in a plan, right after their last scheduled enrollment.
+     * Enroll the member in a plan, right after their last scheduled enrollment, and create its pending revenue.
      *
      * The new enrollment is only active when the member has no active plan; otherwise it is saved
-     * as inactive and waits for its start date. The member row is locked so two simultaneous requests
-     * (a double click, two open tabs) run one after the other and never create two active enrollments.
+     * as inactive and waits for its start date. The revenue keeps the plan price of today and is due when
+     * the enrollment starts. Both are saved in one transaction: either both exist or neither does.
+     * The member row is locked so two simultaneous requests (a double click, two open tabs) run one
+     * after the other and never create two active enrollments.
      */
     public function enroll(MembershipPlan $plan): Enrollment
     {
@@ -86,7 +97,7 @@ class Member extends Model
             $startsOn = $this->nextEnrollmentStartsOn($this->lastScheduledEnrollment());
             $hasActiveEnrollment = $this->enrollments()->where('status', EnrollmentStatus::Active)->exists();
 
-            return $this->enrollments()->create([
+            $enrollment = $this->enrollments()->create([
                 'membership_plan_id' => $plan->id,
                 'starts_on' => $startsOn,
                 'ends_on' => $startsOn->addMonthsNoOverflow($plan->billing_period->months()),
@@ -94,6 +105,15 @@ class Member extends Model
                     ? EnrollmentStatus::Inactive
                     : EnrollmentStatus::Active,
             ]);
+
+            $enrollment->revenue()->create([
+                'member_id' => $this->id,
+                'price_in_cents' => $plan->price_in_cents,
+                'due_on' => $startsOn,
+                'status' => RevenueStatus::Pending,
+            ]);
+
+            return $enrollment;
         });
     }
 

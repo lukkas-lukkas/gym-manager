@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Enums\BillingPeriod;
 use App\Enums\EnrollmentStatus;
+use App\Enums\RevenueStatus;
 use App\Models\Enrollment;
 use App\Models\Member;
 use App\Models\MembershipPlan;
@@ -64,6 +65,23 @@ class RollOverExpiredEnrollmentsTest extends TestCase
         $this->assertSame('2026-11-11', $renewedEnrollment->starts_on->toDateString());
         $this->assertSame('2027-02-11', $renewedEnrollment->ends_on->toDateString());
         $this->assertSame(EnrollmentStatus::Active, $renewedEnrollment->status);
+    }
+
+    public function test_automatic_renewal_creates_a_pending_revenue_at_the_current_price(): void
+    {
+        $member = Member::factory()->create();
+        $plan = MembershipPlan::factory()->create(['price_in_cents' => 15_000, 'billing_period' => BillingPeriod::Monthly]);
+        $expiredEnrollment = Enrollment::factory()->for($member)->for($plan)->create([
+            'starts_on' => '2026-10-10',
+            'ends_on' => '2026-11-10',
+        ]);
+
+        $this->artisan('enrollments:roll-over')->assertSuccessful();
+
+        $revenue = $member->enrollments()->whereKeyNot($expiredEnrollment->id)->sole()->revenue;
+        $this->assertSame(15_000, $revenue->price_in_cents);
+        $this->assertSame('2026-11-11', $revenue->due_on->toDateString());
+        $this->assertSame(RevenueStatus::Pending, $revenue->status);
     }
 
     public function test_deactivated_member_only_has_the_expired_enrollment_closed(): void

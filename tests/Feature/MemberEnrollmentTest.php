@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Enums\BillingPeriod;
 use App\Enums\EnrollmentStatus;
+use App\Enums\RevenueStatus;
 use App\Models\Enrollment;
 use App\Models\Member;
 use App\Models\MembershipPlan;
@@ -316,6 +317,39 @@ class MemberEnrollmentTest extends TestCase
             ->assertSessionHasErrors('membership_plan_id');
 
         $this->assertDatabaseCount('enrollments', 0);
+    }
+
+    public function test_enrolling_creates_a_pending_revenue_with_the_plan_price_due_when_the_plan_starts(): void
+    {
+        $this->travelTo('2026-11-10 12:00:00');
+
+        $member = Member::factory()->create();
+        Enrollment::factory()->for($member)->create(['starts_on' => '2026-10-31', 'ends_on' => '2026-11-30']);
+        $plan = MembershipPlan::factory()->create(['price_in_cents' => 12_990, 'billing_period' => BillingPeriod::Monthly]);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('members.enrollments.store', $member), ['membership_plan_id' => $plan->id])
+            ->assertSessionHasNoErrors();
+
+        $revenue = $member->enrollments()->where('membership_plan_id', $plan->id)->sole()->revenue;
+        $this->assertSame($member->id, $revenue->member_id);
+        $this->assertSame(12_990, $revenue->price_in_cents);
+        $this->assertSame('2026-12-01', $revenue->due_on->toDateString());
+        $this->assertSame(RevenueStatus::Pending, $revenue->status);
+        $this->assertNull($revenue->paid_at);
+    }
+
+    public function test_revenue_keeps_the_price_of_the_enrollment_day_when_the_plan_price_changes(): void
+    {
+        $member = Member::factory()->create();
+        $plan = MembershipPlan::factory()->create(['price_in_cents' => 10_000]);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('members.enrollments.store', $member), ['membership_plan_id' => $plan->id]);
+
+        $plan->update(['price_in_cents' => 15_000]);
+
+        $this->assertSame(10_000, $member->revenues()->sole()->price_in_cents);
     }
 
     public function test_new_plan_page_of_a_missing_member_returns_not_found(): void
