@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\RevenueStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\RevenueFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,6 +44,22 @@ class Revenue extends Model
     public function member(): BelongsTo
     {
         return $this->belongsTo(Member::class);
+    }
+
+    /**
+     * Only revenues due within the month of the given date.
+     *
+     * Compares the plain `due_on` column with a range, so the `due_on` index can be used.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function dueIn(Builder $query, CarbonImmutable $month): void
+    {
+        $query->whereBetween('due_on', [
+            $month->startOfMonth()->toDateString(),
+            $month->endOfMonth()->toDateString(),
+        ]);
     }
 
     /**

@@ -73,6 +73,23 @@ export type EnrollmentRevenue = {
     paid_at: string | null;
 };
 
+/**
+ * One row of the revenue list, with the member and plan names already joined in.
+ */
+export type Revenue = {
+    id: number;
+    member_id: number;
+    member_name: string;
+    plan_name: string;
+    price_in_cents: number;
+    /** Date in `YYYY-MM-DD` format. */
+    due_on: string;
+    status: RevenueStatus;
+    status_label: string;
+    /** Pending and past its due date. */
+    is_overdue: boolean;
+};
+
 export type ExpenseStatus = 'pending' | 'paid';
 
 export type ExpenseStatusOption = {

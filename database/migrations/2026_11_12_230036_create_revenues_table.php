@@ -29,6 +29,7 @@ return new class extends Migration
 
             $table->index(['member_id', 'status']);
             $table->index(['status', 'due_on']);
+            $table->index('due_on');
         });
     }
 
