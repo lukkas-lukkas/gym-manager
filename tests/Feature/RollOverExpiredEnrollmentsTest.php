@@ -11,6 +11,8 @@ use App\Models\Member;
 use App\Models\MembershipPlan;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Exceptions;
+use RuntimeException;
 use Tests\TestCase;
 
 class RollOverExpiredEnrollmentsTest extends TestCase
@@ -122,13 +124,50 @@ class RollOverExpiredEnrollmentsTest extends TestCase
         );
     }
 
-    public function test_command_is_scheduled_daily_at_one_minute_past_midnight_in_sao_paulo(): void
+    public function test_one_failing_member_does_not_stop_the_others_and_the_command_fails(): void
+    {
+        Exceptions::fake();
+
+        $brokenEnrollment = Enrollment::factory()->create(['starts_on' => '2026-10-10', 'ends_on' => '2026-11-10']);
+        $healthyEnrollment = Enrollment::factory()->create(['starts_on' => '2026-10-10', 'ends_on' => '2026-11-10']);
+
+        Enrollment::updating(function (Enrollment $enrollment) use ($brokenEnrollment): void {
+            if ($enrollment->is($brokenEnrollment)) {
+                throw new RuntimeException('Simulated failure');
+            }
+        });
+
+        $this->artisan('enrollments:roll-over')->assertFailed();
+
+        Exceptions::assertReported(RuntimeException::class);
+        $this->assertSame(EnrollmentStatus::Active, $brokenEnrollment->fresh()->status);
+        $this->assertSame(1, $brokenEnrollment->member->enrollments()->count());
+        $this->assertSame(EnrollmentStatus::Inactive, $healthyEnrollment->fresh()->status);
+        $this->assertSame(2, $healthyEnrollment->member->enrollments()->count());
+    }
+
+    public function test_running_twice_changes_nothing_the_second_time(): void
+    {
+        $member = Member::factory()->create();
+        Enrollment::factory()->for($member)->create(['starts_on' => '2026-10-10', 'ends_on' => '2026-11-10']);
+
+        $this->artisan('enrollments:roll-over')->assertSuccessful();
+        $this->artisan('enrollments:roll-over')->assertSuccessful();
+
+        $this->assertSame(2, $member->enrollments()->count());
+        $this->assertSame(1, $member->enrollments()->where('status', EnrollmentStatus::Active)->count());
+    }
+
+    public function test_command_is_scheduled_hourly_in_sao_paulo_with_a_short_overlap_lock(): void
     {
         $event = collect(app(Schedule::class)->events())
             ->first(fn ($event): bool => str_contains($event->command, 'enrollments:roll-over'));
 
         $this->assertNotNull($event);
-        $this->assertSame('1 0 * * *', $event->expression);
+        $this->assertSame('1 * * * *', $event->expression);
         $this->assertSame('America/Sao_Paulo', $event->timezone);
+        $this->assertTrue($event->withoutOverlapping);
+        $this->assertSame(60, $event->expiresAt);
+        $this->assertTrue($event->onOneServer);
     }
 }
