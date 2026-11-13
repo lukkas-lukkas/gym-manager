@@ -317,12 +317,46 @@ class ExpenseTest extends TestCase
             ->assertRedirect(route('expenses.index', ['month' => '2026-11']));
 
         $this->assertSame(ExpenseStatus::Paid, $expense->fresh()->status);
+        $this->assertNotNull($expense->fresh()->paid_at);
 
         $this->actingAs($user)
             ->put(route('expenses.update', $expense), [...$payload, 'status' => 'pending'])
             ->assertRedirect(route('expenses.index', ['month' => '2026-11']));
 
         $this->assertSame(ExpenseStatus::Pending, $expense->fresh()->status);
+        $this->assertNull($expense->fresh()->paid_at);
+    }
+
+    public function test_paying_an_expense_records_when_it_was_paid(): void
+    {
+        $this->freezeSecond();
+        $expense = Expense::factory()->create(['due_on' => '2026-10-05']);
+
+        $this->actingAs(User::factory()->create())
+            ->put(route('expenses.update', $expense), [
+                'description' => $expense->description,
+                'amount_in_cents' => (string) $expense->amount_in_cents,
+                'due_on' => '2026-10-05',
+                'status' => 'paid',
+            ]);
+
+        $this->assertTrue(now()->equalTo($expense->fresh()->paid_at));
+    }
+
+    public function test_editing_a_paid_expense_keeps_its_original_payment_time(): void
+    {
+        $paidAt = now()->subMonth()->startOfSecond();
+        $expense = Expense::factory()->paid()->create(['due_on' => '2026-10-05', 'paid_at' => $paidAt]);
+
+        $this->actingAs(User::factory()->create())
+            ->put(route('expenses.update', $expense), [
+                'description' => 'Novo nome',
+                'amount_in_cents' => (string) $expense->amount_in_cents,
+                'due_on' => '2026-10-05',
+                'status' => 'paid',
+            ]);
+
+        $this->assertTrue($paidAt->equalTo($expense->fresh()->paid_at));
     }
 
     public function test_status_must_be_a_known_value(): void

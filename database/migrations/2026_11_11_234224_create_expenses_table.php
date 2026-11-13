@@ -19,9 +19,11 @@ return new class extends Migration
             $table->unsignedInteger('amount_in_cents');
             $table->date('due_on');
             $table->string('status', 20);
+            $table->timestamp('paid_at')->nullable();
             $table->timestamps();
 
             $table->index('due_on');
+            $table->index(['status', 'paid_at']);
         });
     }
 

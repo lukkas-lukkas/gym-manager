@@ -33,6 +33,6 @@ class ExpenseFactory extends Factory
      */
     public function paid(): static
     {
-        return $this->state(fn (): array => ['status' => ExpenseStatus::Paid]);
+        return $this->state(fn (): array => ['status' => ExpenseStatus::Paid, 'paid_at' => now()]);
     }
 }

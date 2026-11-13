@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-#[Fillable(['description', 'amount_in_cents', 'due_on', 'status'])]
+#[Fillable(['description', 'amount_in_cents', 'due_on', 'status', 'paid_at'])]
 class Expense extends Model
 {
     /** @use HasFactory<ExpenseFactory> */
@@ -31,6 +31,7 @@ class Expense extends Model
             'amount_in_cents' => 'integer',
             'due_on' => 'date:Y-m-d',
             'status' => ExpenseStatus::class,
+            'paid_at' => 'datetime',
         ];
     }
 
