@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ReportPeriodRequest;
+use App\Reports\CashFlowReport;
 use App\Reports\ExpenseReport;
 use App\Reports\ReportPeriod;
 use App\Reports\RevenueProjection;
@@ -29,6 +30,7 @@ class ReportController extends Controller
             'to' => $period->lastMonth(),
             'maxMonths' => ReportPeriod::MAX_MONTHS,
             'months' => $period->months(),
+            'cashFlow' => Inertia::defer(fn (): array => (new CashFlowReport($period))->toArray(), 'cashFlow'),
             'revenues' => Inertia::defer(fn (): array => (new RevenueReport($period))->toArray(), 'revenues'),
             'revenueProjection' => Inertia::defer(fn (): array => (new RevenueProjection($period))->toArray(), 'revenueProjection'),
             'expenses' => Inertia::defer(fn (): array => (new ExpenseReport($period))->toArray(), 'expenses'),

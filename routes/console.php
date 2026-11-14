@@ -17,3 +17,13 @@ Schedule::command('enrollments:roll-over')
     ->timezone('America/Sao_Paulo')
     ->withoutOverlapping(60)
     ->onOneServer();
+
+/*
+ * Once a day, early in the morning, when almost no payment is being made: the check locks the account row
+ * for a few milliseconds. It only reports a mismatch (logged as an error, the command fails); it never fixes it.
+ */
+Schedule::command('bank-accounts:verify')
+    ->dailyAt('03:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping(10)
+    ->onOneServer();

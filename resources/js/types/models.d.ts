@@ -107,3 +107,14 @@ export type Expense = {
     /** Translated status (e.g. "Pendente"), ready to display. */
     status_label: string;
 };
+
+/**
+ * The gym's single bank account. Amounts in cents.
+ */
+export type BankAccount = {
+    name: string;
+    opening_balance_in_cents: number;
+    current_balance_in_cents: number;
+    /** ISO 8601 timestamp of the opening balance. */
+    opened_at: string;
+};

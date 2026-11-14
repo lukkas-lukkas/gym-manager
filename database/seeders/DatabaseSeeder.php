@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             MembershipPlanSeeder::class,
             EnrollmentSeeder::class,
             ExpenseSeeder::class,
+            BankAccountSeeder::class,
         ]);
     }
 }

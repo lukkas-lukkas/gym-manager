@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\RevenueStatus;
+use App\Models\BankAccount;
 use App\Models\Revenue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -73,5 +74,57 @@ class RevenuePaymentTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->post(route('revenues.pay', 999))
             ->assertNotFound();
+    }
+
+    public function test_paying_adds_the_revenue_price_to_the_bank_account_balance(): void
+    {
+        $account = BankAccount::factory()->create(['opening_balance_in_cents' => 100_000, 'current_balance_in_cents' => 150_000]);
+        $revenue = Revenue::factory()->create(['price_in_cents' => 12_000]);
+
+        $this->actingAs(User::factory()->create())->post(route('revenues.pay', $revenue));
+
+        $account->refresh();
+        $this->assertSame(162_000, $account->current_balance_in_cents);
+        $this->assertSame(100_000, $account->opening_balance_in_cents);
+    }
+
+    public function test_paying_twice_adds_the_price_to_the_balance_only_once(): void
+    {
+        $account = BankAccount::factory()->create(['current_balance_in_cents' => 150_000]);
+        $revenue = Revenue::factory()->create(['price_in_cents' => 12_000]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('revenues.pay', $revenue));
+        $this->actingAs($user)->post(route('revenues.pay', $revenue));
+
+        $this->assertSame(162_000, $account->refresh()->current_balance_in_cents);
+    }
+
+    public function test_paying_without_a_bank_account_still_registers_the_payment(): void
+    {
+        $revenue = Revenue::factory()->create();
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('revenues.pay', $revenue))
+            ->assertInertiaFlash('success', 'Pagamento registrado.');
+
+        $this->assertSame(RevenueStatus::Paid, $revenue->fresh()->status);
+        $this->assertDatabaseCount('bank_accounts', 0);
+    }
+
+    public function test_revenue_stays_pending_when_the_balance_cannot_be_updated(): void
+    {
+        // The largest value a signed BIGINT holds: adding even one cent makes the database reject the update.
+        $account = BankAccount::factory()->create(['current_balance_in_cents' => PHP_INT_MAX]);
+        $revenue = Revenue::factory()->create(['price_in_cents' => 1]);
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('revenues.pay', $revenue))
+            ->assertServerError();
+
+        $revenue->refresh();
+        $this->assertSame(RevenueStatus::Pending, $revenue->status);
+        $this->assertNull($revenue->paid_at);
+        $this->assertSame(PHP_INT_MAX, $account->refresh()->current_balance_in_cents);
     }
 }

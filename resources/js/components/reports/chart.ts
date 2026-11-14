@@ -1,4 +1,4 @@
-import { BarElement, CategoryScale, Chart, Legend, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js';
+import { BarElement, CategoryScale, Chart, Legend, LinearScale, LineController, LineElement, PointElement, Tooltip } from 'chart.js';
 
 /**
  * Chart.js setup shared by every report chart.
@@ -6,7 +6,8 @@ import { BarElement, CategoryScale, Chart, Legend, LinearScale, LineElement, Poi
  * Only the pieces the reports use are registered, so the bundle carries just that part of Chart.js.
  * Importing this module is enough: the registration runs once, the first time any chart loads.
  */
-Chart.register(BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
+/** `LineController` lets a bar chart also draw lines (the cash flow shows bars and the balance line together). */
+Chart.register(BarElement, LineElement, PointElement, LineController, CategoryScale, LinearScale, Tooltip, Legend);
 
 /** Same font as the app (`--font-sans` in `app.css`). Written out instead of read from the DOM, so this module also loads during SSR. */
 Chart.defaults.font.family = "'Instrument Sans', ui-sans-serif, system-ui, sans-serif";

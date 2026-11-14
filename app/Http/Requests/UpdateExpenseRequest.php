@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\ExpenseStatus;
+use App\Models\Expense;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * Edits a single expense: description, amount, due date and status.
@@ -51,6 +53,32 @@ class UpdateExpenseRequest extends FormRequest
         return [
             'amount_in_cents.min' => 'O valor deve ser de pelo menos R$ 0,01.',
             'amount_in_cents.max' => 'O valor não pode passar de R$ 99.999,99.',
+        ];
+    }
+
+    /**
+     * Refuses a new amount for an expense that is paid and stays paid: the money already left the bank account with
+     * the old amount. Setting it back to pending first gives that money back, and then the amount can change.
+     *
+     * @return array<int, callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $expense = $this->route('expense');
+
+                if ($validator->errors()->isNotEmpty() || ! $expense instanceof Expense) {
+                    return;
+                }
+
+                $staysPaid = $expense->status === ExpenseStatus::Paid
+                    && $this->enum('status', ExpenseStatus::class) === ExpenseStatus::Paid;
+
+                if ($staysPaid && $this->integer('amount_in_cents') !== $expense->amount_in_cents) {
+                    $validator->errors()->add('amount_in_cents', 'Esta despesa já foi paga. Para mudar o valor, salve-a primeiro como pendente.');
+                }
+            },
         ];
     }
 }

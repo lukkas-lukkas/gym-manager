@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberEnrollmentController;
@@ -30,6 +31,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/revenues/{revenue}/pay', [RevenuePaymentController::class, 'store'])->name('revenues.pay');
 
     Route::resource('expenses', ExpenseController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+
+    Route::singleton('bank-account', BankAccountController::class)->creatable()->except('destroy');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 

@@ -88,17 +88,18 @@ class ExpenseController extends Controller
     /**
      * Update the given expense and go back to the list on the month it is now due.
      *
+     * The bank account balance follows the status (see {@see Expense::applyChanges()}).
      * `paid_at` follows the status: becoming paid stamps the current time, an expense that was already paid
      * keeps its original time, and going back to pending clears it.
      */
     public function update(UpdateExpenseRequest $request, Expense $expense): RedirectResponse
     {
-        $isPaid = $request->enum('status', ExpenseStatus::class) === ExpenseStatus::Paid;
-
-        $expense->update([
-            ...$request->validated(),
-            'paid_at' => $isPaid ? ($expense->paid_at ?? now()) : null,
-        ]);
+        $expense->applyChanges(
+            description: $request->string('description')->toString(),
+            amountInCents: $request->integer('amount_in_cents'),
+            dueOn: $request->string('due_on')->toString(),
+            status: $request->enum('status', ExpenseStatus::class),
+        );
 
         Inertia::flash('success', 'Despesa atualizada com sucesso.');
 

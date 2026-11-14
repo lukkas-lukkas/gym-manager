@@ -57,6 +57,7 @@ const listUrl = computed(() => `/expenses?month=${props.expense.due_on.slice(0, 
                         <label for="amount" class="text-sm font-medium text-gray-700">Valor</label>
                         <MoneyInput id="amount" name="amount_in_cents" :initial-cents="expense.amount_in_cents" required />
                         <p v-if="errors.amount_in_cents" class="text-sm text-red-600">{{ errors.amount_in_cents }}</p>
+                        <p v-else-if="expense.status === 'paid'" class="text-sm text-gray-600">Já paga: para mudar o valor, salve primeiro como pendente.</p>
                     </div>
 
                     <div class="flex flex-col gap-1.5">

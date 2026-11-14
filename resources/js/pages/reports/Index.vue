@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import BarChart, { type BarSeries } from '../../components/reports/BarChart.vue';
+import CashFlowChart from '../../components/reports/CashFlowChart.vue';
 import ChartCard from '../../components/reports/ChartCard.vue';
 import { seriesColors } from '../../components/reports/chart';
 import AppLayout from '../../layouts/AppLayout.vue';
-import type { MonthlyTotals } from '../../types/reports';
+import type { CashFlow, MonthlyTotals } from '../../types/reports';
 
 defineOptions({ layout: AppLayout });
 
@@ -18,6 +19,8 @@ const props = defineProps<{
     maxMonths: number;
     /** Every month of the period as `YYYY-MM`; each report has one value per month in this order. */
     months: string[];
+    /** Deferred: `undefined` until it loads. */
+    cashFlow?: CashFlow;
     /** Deferred: `undefined` until it loads. */
     revenues?: MonthlyTotals;
     /** Deferred: renewals that don't exist yet, in cents, one value per month. `undefined` until it loads. */
@@ -107,6 +110,18 @@ const revenueProjectionSeries = computed((): BarSeries[] =>
 
         <section class="flex flex-col gap-4" aria-labelledby="financial-title">
             <h2 id="financial-title" class="text-lg font-semibold text-gray-900">Financeiro</h2>
+
+            <ChartCard
+                title="Fluxo de caixa"
+                description="Entradas e saídas por mês e o saldo da conta no fim de cada mês. A partir do mês atual, os valores são previstos: o que vence e ainda não foi pago, mais as renovações dos planos atuais. Mensalidades atrasadas não entram."
+                :is-loading="cashFlow === undefined"
+            >
+                <CashFlowChart accessible-label="Entradas, saídas e saldo da conta por mês" :months="months" :cash-flow="cashFlow!" />
+
+                <p v-if="cashFlow && cashFlow.currentBalance === null" class="text-sm text-gray-600">
+                    <Link href="/bank-account" class="font-medium text-gray-900 underline">Cadastre a conta bancária</Link> para ver o saldo.
+                </p>
+            </ChartCard>
 
             <ChartCard
                 title="Receitas"

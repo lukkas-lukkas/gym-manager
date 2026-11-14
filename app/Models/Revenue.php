@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 #[Fillable(['member_id', 'price_in_cents', 'due_on', 'status', 'paid_at'])]
 class Revenue extends Model
@@ -71,18 +72,29 @@ class Revenue extends Model
     }
 
     /**
-     * Mark the revenue as paid now, returning whether it was still pending.
+     * Mark the revenue as paid now and add its price to the bank account balance, returning whether it was still pending.
      *
-     * The update only matches a pending row, so a double click or two open tabs pay it once and keep the first `paid_at`.
+     * The update only matches a pending row, so a double click or two open tabs pay it once, keep the first `paid_at`
+     * and add the money to the balance only once. Both changes run in one transaction: if updating the balance fails,
+     * the revenue stays pending. While no bank account is registered the payment is saved without touching any
+     * balance; it becomes part of the opening balance once the account is registered.
      */
     public function markAsPaid(): bool
     {
         $paidAt = now();
 
-        $wasPending = static::query()
-            ->whereKey($this->getKey())
-            ->where('status', RevenueStatus::Pending)
-            ->update(['status' => RevenueStatus::Paid, 'paid_at' => $paidAt]) === 1;
+        $wasPending = DB::transaction(function () use ($paidAt): bool {
+            $wasPending = static::query()
+                ->whereKey($this->getKey())
+                ->where('status', RevenueStatus::Pending)
+                ->update(['status' => RevenueStatus::Paid, 'paid_at' => $paidAt]) === 1;
+
+            if ($wasPending) {
+                BankAccount::current()?->credit($this->price_in_cents);
+            }
+
+            return $wasPending;
+        });
 
         if ($wasPending) {
             $this->forceFill(['status' => RevenueStatus::Paid, 'paid_at' => $paidAt])->syncOriginal();

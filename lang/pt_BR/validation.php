@@ -54,6 +54,7 @@ return [
         'month' => 'mês',
         'months' => 'meses',
         'name' => 'nome',
+        'opening_balance_in_cents' => 'saldo inicial',
         'password' => 'senha',
         'status' => 'status',
         'price_in_cents' => 'preço',
