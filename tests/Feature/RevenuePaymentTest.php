@@ -40,6 +40,17 @@ class RevenuePaymentTest extends TestCase
         $this->assertSame('2026-11-12 15:30:00', $revenue->paid_at->toDateTimeString());
     }
 
+    public function test_paying_from_the_revenues_list_goes_back_to_the_same_month_and_page(): void
+    {
+        $revenue = Revenue::factory()->create();
+        $revenuesUrl = route('revenues.index', ['month' => '2026-11', 'page' => 2]);
+
+        $this->actingAs(User::factory()->create())
+            ->from($revenuesUrl)
+            ->post(route('revenues.pay', $revenue))
+            ->assertRedirect($revenuesUrl);
+    }
+
     public function test_paying_twice_keeps_the_first_payment_date(): void
     {
         $this->travelTo('2026-11-12 15:30:00');

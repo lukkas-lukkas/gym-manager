@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
 import type { Paginated, Revenue } from '../../types/models';
 
@@ -13,6 +13,25 @@ const props = defineProps<{
     nextMonth: string;
     revenues: Paginated<Revenue>;
 }>();
+
+/** ID of the revenue whose payment is being sent, so only its button shows the loading state. */
+const payingRevenueId = ref<number | null>(null);
+
+/**
+ * Registers the payment of a revenue after the user confirms. The server redirects back here,
+ * keeping the current month and page.
+ */
+function markAsPaid(revenue: Revenue): void {
+    if (!window.confirm(`Registrar o pagamento de ${formatAmount(revenue.price_in_cents)} de ${revenue.member_name} (${revenue.plan_name})?`)) {
+        return;
+    }
+
+    router.post(`/revenues/${revenue.id}/pay`, {}, {
+        preserveScroll: true,
+        onStart: () => (payingRevenueId.value = revenue.id),
+        onFinish: () => (payingRevenueId.value = null),
+    });
+}
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
@@ -92,7 +111,9 @@ const monthLabel = computed((): string => {
             <ul class="divide-y divide-gray-200 md:hidden">
                 <li v-for="revenue in revenues.data" :key="revenue.id" class="flex items-start justify-between gap-4 p-4">
                     <div class="flex min-w-0 flex-col gap-1">
-                        <span class="font-medium text-gray-900">{{ revenue.member_name }}</span>
+                        <Link :href="`/members/${revenue.member_id}`" class="font-medium text-gray-900 hover:underline">
+                            {{ revenue.member_name }}
+                        </Link>
                         <span class="text-sm text-gray-600">{{ revenue.plan_name }}</span>
                         <span class="text-sm text-gray-600">Vence em {{ formatDate(revenue.due_on) }}</span>
                     </div>
@@ -101,12 +122,15 @@ const monthLabel = computed((): string => {
                         <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="statusBadge(revenue).classes">
                             {{ statusBadge(revenue).label }}
                         </span>
-                        <Link
-                            :href="`/members/${revenue.member_id}/enrollments`"
-                            class="mt-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                        <button
+                            v-if="revenue.status === 'pending'"
+                            type="button"
+                            :disabled="payingRevenueId === revenue.id"
+                            class="mt-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-60"
+                            @click="markAsPaid(revenue)"
                         >
-                            Ver aluno
-                        </Link>
+                            Marcar como pago
+                        </button>
                     </div>
                 </li>
             </ul>
@@ -125,7 +149,9 @@ const monthLabel = computed((): string => {
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     <tr v-for="revenue in revenues.data" :key="revenue.id" class="hover:bg-gray-50">
-                        <td class="px-6 py-4 font-medium text-gray-900">{{ revenue.member_name }}</td>
+                        <td class="px-6 py-4 font-medium text-gray-900">
+                            <Link :href="`/members/${revenue.member_id}`" class="hover:underline">{{ revenue.member_name }}</Link>
+                        </td>
                         <td class="px-6 py-4 text-gray-600">{{ revenue.plan_name }}</td>
                         <td class="px-6 py-4 text-gray-600 tabular-nums">{{ formatDate(revenue.due_on) }}</td>
                         <td class="px-6 py-4">
@@ -135,13 +161,15 @@ const monthLabel = computed((): string => {
                         </td>
                         <td class="px-6 py-4 text-right text-gray-900 tabular-nums">{{ formatAmount(revenue.price_in_cents) }}</td>
                         <td class="px-6 py-4 text-right">
-                            <Link
-                                :href="`/members/${revenue.member_id}/enrollments`"
-                                class="font-medium text-gray-700 hover:text-gray-900 hover:underline"
-                                :aria-label="`Ver planos de ${revenue.member_name}`"
+                            <button
+                                v-if="revenue.status === 'pending'"
+                                type="button"
+                                :disabled="payingRevenueId === revenue.id"
+                                class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-gray-700 hover:bg-gray-100 disabled:opacity-60"
+                                @click="markAsPaid(revenue)"
                             >
-                                Ver aluno
-                            </Link>
+                                Marcar como pago
+                            </button>
                         </td>
                     </tr>
                 </tbody>
