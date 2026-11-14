@@ -60,12 +60,17 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | will be used by the PHP date and date-time functions.
+    |
+    | The gym runs on Brasília time, and that is a business rule, not a
+    | per-server setting: "today", due dates, overdue checks and the month
+    | a payment falls in for the reports all depend on it. So it is fixed
+    | here instead of read from the environment, and every environment
+    | (local, tests, production) behaves the same.
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'America/Sao_Paulo',
 
     /*
     |--------------------------------------------------------------------------

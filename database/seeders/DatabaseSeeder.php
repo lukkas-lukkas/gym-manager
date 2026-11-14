@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -12,18 +13,17 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * Plans come before enrollments, which pick one of them for each member.
      */
     public function run(): void
     {
         $this->call([
+            UserSeeder::class,
             MemberSeeder::class,
             MembershipPlanSeeder::class,
             EnrollmentSeeder::class,
-        ]);
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            ExpenseSeeder::class,
         ]);
     }
 }

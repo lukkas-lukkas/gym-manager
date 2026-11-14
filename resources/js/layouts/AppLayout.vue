@@ -17,7 +17,7 @@ const menuItems: MenuItem[] = [
     { label: 'Planos', href: '/membership-plans', icon: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 13h6M9 17h4' },
     { label: 'Receitas', href: '/revenues', icon: 'M12 19V5M5 12l7-7 7 7' },
     { label: 'Despesas', href: '/expenses', icon: 'M12 5v14M19 12l-7 7-7-7' },
-    { label: 'Relatórios', icon: 'M3 3v18h18M7 15l4-4 3 3 5-6' },
+    { label: 'Relatórios', href: '/reports', icon: 'M3 3v18h18M7 15l4-4 3 3 5-6' },
 ];
 
 const page = usePage();

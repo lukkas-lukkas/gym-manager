@@ -23,7 +23,7 @@ class RevenueController extends Controller
         ]);
 
         $month = isset($validated['month'])
-            ? CarbonImmutable::createFromFormat('Y-m', $validated['month'])->startOfMonth()
+            ? CarbonImmutable::createFromFormat('!Y-m', $validated['month'])
             : CarbonImmutable::today()->startOfMonth();
 
         return Inertia::render('revenues/Index', [

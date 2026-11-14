@@ -75,6 +75,20 @@ class ExpenseTest extends TestCase
             );
     }
 
+    public function test_index_keeps_the_month_from_the_url_on_the_last_day_of_a_month(): void
+    {
+        $this->travelTo('2026-10-31 10:00:00');
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('expenses.index', ['month' => '2026-11']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('month', '2026-11')
+                ->where('previousMonth', '2026-10')
+                ->where('nextMonth', '2026-12')
+            );
+    }
+
     public function test_index_is_paginated_keeping_the_month_in_the_links(): void
     {
         Expense::factory(16)->create(['due_on' => '2027-03-10']);

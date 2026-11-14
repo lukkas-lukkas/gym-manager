@@ -13,7 +13,7 @@ return new class extends Migration
      *
      * One revenue per enrollment. `price_in_cents` is the plan price on the day of the enrollment, so later
      * price changes never rewrite history. `member_id` is copied from the enrollment so a member's charges
-     * can be listed without a join.
+     * can be listed without a join. `(status, paid_at)` serves the reports, which sum paid revenues by payment month.
      */
     public function up(): void
     {
@@ -29,6 +29,7 @@ return new class extends Migration
 
             $table->index(['member_id', 'status']);
             $table->index(['status', 'due_on']);
+            $table->index(['status', 'paid_at']);
             $table->index('due_on');
         });
     }
