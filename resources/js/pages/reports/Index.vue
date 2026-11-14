@@ -4,9 +4,10 @@ import { computed } from 'vue';
 import BarChart, { type BarSeries } from '../../components/reports/BarChart.vue';
 import CashFlowChart from '../../components/reports/CashFlowChart.vue';
 import ChartCard from '../../components/reports/ChartCard.vue';
+import HorizontalBarChart from '../../components/reports/HorizontalBarChart.vue';
 import { seriesColors } from '../../components/reports/chart';
 import AppLayout from '../../layouts/AppLayout.vue';
-import type { CashFlow, MonthlyTotals } from '../../types/reports';
+import type { ActiveEnrollmentsByPlan, CashFlow, MonthlyTotals } from '../../types/reports';
 
 defineOptions({ layout: AppLayout });
 
@@ -27,6 +28,8 @@ const props = defineProps<{
     revenueProjection?: number[];
     /** Deferred: `undefined` until it loads. */
     expenses?: MonthlyTotals;
+    /** Deferred, and not tied to the period (a snapshot of today): `undefined` until it loads. */
+    activeEnrollmentsByPlan?: ActiveEnrollmentsByPlan[];
 }>();
 
 /**
@@ -53,6 +56,20 @@ function realizedVersusForecast(totals: MonthlyTotals | undefined, color: string
 const revenueSeries = computed((): BarSeries[] => realizedVersusForecast(props.revenues, seriesColors.revenue));
 
 const expenseSeries = computed((): BarSeries[] => realizedVersusForecast(props.expenses, seriesColors.expense));
+
+/**
+ * A plan's name as shown on the chart, flagging the plans no longer on sale.
+ */
+function planLabel(plan: ActiveEnrollmentsByPlan): string {
+    return plan.is_deactivated ? `${plan.name} (fora de venda)` : plan.name;
+}
+
+/**
+ * "1 matrícula" / "3 matrículas".
+ */
+function formatEnrollmentCount(count: number): string {
+    return `${count} ${count === 1 ? 'matrícula' : 'matrículas'}`;
+}
 
 const revenueProjectionSeries = computed((): BarSeries[] =>
     props.revenueProjection ? [{ label: 'Renovações projetadas', values: props.revenueProjection, color: seriesColors.revenue, isForecast: true }] : [],
@@ -151,6 +168,28 @@ const revenueProjectionSeries = computed((): BarSeries[] =>
                 empty-message="Nenhuma despesa no período."
             >
                 <BarChart accessible-label="Despesas realizadas e previstas por mês" :months="months" :series="expenseSeries" />
+            </ChartCard>
+        </section>
+
+        <section class="flex flex-col gap-4" aria-labelledby="members-title">
+            <h2 id="members-title" class="text-lg font-semibold text-gray-900">Alunos</h2>
+
+            <ChartCard
+                title="Matrículas ativas por plano"
+                description="Quantos alunos estão em cada plano hoje. Não depende do período escolhido acima."
+                :is-loading="activeEnrollmentsByPlan === undefined"
+                :is-empty="activeEnrollmentsByPlan !== undefined && activeEnrollmentsByPlan.length === 0"
+                empty-message="Nenhum plano cadastrado."
+            >
+                <HorizontalBarChart
+                    accessible-label="Matrículas ativas em cada plano"
+                    :labels="activeEnrollmentsByPlan!.map(planLabel)"
+                    :values="activeEnrollmentsByPlan!.map((plan) => plan.active_enrollments)"
+                    :color="seriesColors.members"
+                    value-label="Matrículas ativas"
+                    category-label="Plano"
+                    :format-value="formatEnrollmentCount"
+                />
             </ChartCard>
         </section>
     </div>

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'price_in_cents', 'billing_period'])]
 class MembershipPlan extends Model
@@ -30,6 +31,16 @@ class MembershipPlan extends Model
             'billing_period' => BillingPeriod::class,
             'deactivated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Every enrollment in this plan, active and ended.
+     *
+     * @return HasMany<Enrollment, $this>
+     */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
     }
 
     /**

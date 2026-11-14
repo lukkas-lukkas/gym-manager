@@ -16,12 +16,14 @@ Chart.defaults.color = '#4b5563';
 /**
  * Colors by what the series is, never by its position: revenues are always blue and expenses always orange.
  * The pair was checked for color blindness (no red × green), and every chart also has a legend.
- * The balance is the result of the two, so it gets a neutral dark tone instead of a third hue.
+ * The balance is the result of the two, so it gets a neutral dark tone instead of a third hue. Member counts are a
+ * different measure (people, not money), so they get their own hue: violet.
  */
 export const seriesColors = {
     revenue: '#2a78d6',
     expense: '#eb6834',
     balance: '#111827',
+    members: '#6250d6',
 } as const;
 
 /** Grid lines stay faint so the bars are what the eye reads first. */

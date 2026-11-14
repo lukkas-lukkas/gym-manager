@@ -90,6 +90,6 @@ const chartOptions: ChartOptions<'line'> = {
     <div class="relative h-72">
         <Line :data="chartData" :options="chartOptions" :aria-label="accessibleLabel" role="img" />
 
-        <ChartDataTable :caption="accessibleLabel" :month-labels="monthLabels" :series="series" />
+        <ChartDataTable :caption="accessibleLabel" :row-labels="monthLabels" :series="series" />
     </div>
 </template>

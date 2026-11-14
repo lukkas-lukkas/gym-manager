@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ReportPeriodRequest;
+use App\Reports\ActiveEnrollmentsByPlanReport;
 use App\Reports\CashFlowReport;
 use App\Reports\ExpenseReport;
 use App\Reports\ReportPeriod;
@@ -34,6 +35,7 @@ class ReportController extends Controller
             'revenues' => Inertia::defer(fn (): array => (new RevenueReport($period))->toArray(), 'revenues'),
             'revenueProjection' => Inertia::defer(fn (): array => (new RevenueProjection($period))->toArray(), 'revenueProjection'),
             'expenses' => Inertia::defer(fn (): array => (new ExpenseReport($period))->toArray(), 'expenses'),
+            'activeEnrollmentsByPlan' => Inertia::defer(fn (): array => (new ActiveEnrollmentsByPlanReport)->toArray(), 'activeEnrollmentsByPlan'),
         ]);
     }
 }

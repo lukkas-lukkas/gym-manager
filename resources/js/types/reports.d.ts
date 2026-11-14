@@ -24,3 +24,13 @@ export type CashFlow = {
      */
     forecastBalance: (number | null)[];
 };
+
+/**
+ * One plan and how many enrollments it has active today.
+ */
+export type ActiveEnrollmentsByPlan = {
+    name: string;
+    /** The plan is no longer on sale; it is listed because members are still on it. */
+    is_deactivated: boolean;
+    active_enrollments: number;
+};

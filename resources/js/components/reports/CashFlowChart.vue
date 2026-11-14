@@ -128,6 +128,6 @@ const tableSeries = computed(() => [
     <div class="relative h-80">
         <Bar :data="chartData" :options="chartOptions" :aria-label="accessibleLabel" role="img" />
 
-        <ChartDataTable :caption="accessibleLabel" :month-labels="monthLabels" :series="tableSeries" />
+        <ChartDataTable :caption="accessibleLabel" :row-labels="monthLabels" :series="tableSeries" />
     </div>
 </template>
