@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BankAccountController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpensePaymentController;
 use App\Http\Controllers\MemberController;
@@ -15,7 +16,7 @@ use App\Http\Controllers\RevenuePaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
-    Route::inertia('/', 'Dashboard')->name('home');
+    Route::get('/', DashboardController::class)->name('home');
 
     Route::resource('members', MemberController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update']);
     Route::post('/members/{member}/activate', [MemberStatusController::class, 'activate'])->name('members.activate');
