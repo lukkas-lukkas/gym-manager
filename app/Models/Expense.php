@@ -75,6 +75,37 @@ class Expense extends Model
     }
 
     /**
+     * Mark the expense as paid now and take its amount out of the bank account balance, returning whether it was still pending.
+     *
+     * The update only matches a pending row, so a double click or two open tabs pay it once, keep the first `paid_at`
+     * and take the money out only once. Both changes run in one transaction: if updating the balance fails, the expense
+     * stays pending. While no bank account is registered the payment is saved without touching any balance.
+     */
+    public function markAsPaid(): bool
+    {
+        $paidAt = now();
+
+        $wasPending = DB::transaction(function () use ($paidAt): bool {
+            $wasPending = static::query()
+                ->whereKey($this->getKey())
+                ->where('status', ExpenseStatus::Pending)
+                ->update(['status' => ExpenseStatus::Paid, 'paid_at' => $paidAt]) === 1;
+
+            if ($wasPending) {
+                BankAccount::current()?->debit($this->amount_in_cents);
+            }
+
+            return $wasPending;
+        });
+
+        if ($wasPending) {
+            $this->forceFill(['status' => ExpenseStatus::Paid, 'paid_at' => $paidAt])->syncOriginal();
+        }
+
+        return $wasPending;
+    }
+
+    /**
      * Save the changes made in the edit form and keep the bank account balance in step with the status.
      *
      * | Status change            | Bank account balance                                                  |

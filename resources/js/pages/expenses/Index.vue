@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import AppLayout from '../../layouts/AppLayout.vue';
 import type { Expense, Paginated } from '../../types/models';
 
@@ -13,6 +13,25 @@ const props = defineProps<{
     nextMonth: string;
     expenses: Paginated<Expense>;
 }>();
+
+/** ID of the expense whose payment is being sent, so only its button shows the loading state. */
+const payingExpenseId = ref<number | null>(null);
+
+/**
+ * Registers the payment of an expense after the user confirms. The server redirects back here,
+ * keeping the current month and page.
+ */
+function markAsPaid(expense: Expense): void {
+    if (!window.confirm(`Registrar o pagamento de ${formatAmount(expense.amount_in_cents)} de ${expense.description}?`)) {
+        return;
+    }
+
+    router.post(`/expenses/${expense.id}/pay`, {}, {
+        preserveScroll: true,
+        onStart: () => (payingExpenseId.value = expense.id),
+        onFinish: () => (payingExpenseId.value = null),
+    });
+}
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
@@ -94,6 +113,15 @@ const monthLabel = computed((): string => {
                         >
                             {{ expense.status_label }}
                         </span>
+                        <button
+                            v-if="expense.status === 'pending'"
+                            type="button"
+                            :disabled="payingExpenseId === expense.id"
+                            class="mt-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-60"
+                            @click="markAsPaid(expense)"
+                        >
+                            Marcar como pago
+                        </button>
                         <Link
                             :href="`/expenses/${expense.id}/edit`"
                             class="mt-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
@@ -104,42 +132,56 @@ const monthLabel = computed((): string => {
                 </li>
             </ul>
 
-            <!-- Table from tablet up -->
-            <table class="hidden w-full text-left text-sm md:table">
-                <thead class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 font-semibold">Descrição</th>
-                        <th scope="col" class="px-6 py-3 font-semibold">Vencimento</th>
-                        <th scope="col" class="px-6 py-3 font-semibold">Status</th>
-                        <th scope="col" class="px-6 py-3 text-right font-semibold">Valor</th>
-                        <th scope="col" class="px-6 py-3"><span class="sr-only">Ações</span></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    <tr v-for="expense in expenses.data" :key="expense.id" class="hover:bg-gray-50">
-                        <td class="px-6 py-4 font-medium text-gray-900">{{ expense.description }}</td>
-                        <td class="px-6 py-4 text-gray-600 tabular-nums">{{ formatDate(expense.due_on) }}</td>
-                        <td class="px-6 py-4">
-                            <span
-                                class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                                :class="expense.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'"
-                            >
-                                {{ expense.status_label }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-right text-gray-900 tabular-nums">{{ formatAmount(expense.amount_in_cents) }}</td>
-                        <td class="px-6 py-4 text-right">
-                            <Link
-                                :href="`/expenses/${expense.id}/edit`"
-                                class="font-medium text-gray-700 hover:text-gray-900 hover:underline"
-                                :aria-label="`Editar ${expense.description}`"
-                            >
-                                Editar
-                            </Link>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <!-- Table from tablet up; scrolls sideways instead of cutting the actions off when the screen is narrow -->
+            <div class="hidden overflow-x-auto md:block">
+                <table class="w-full text-left text-sm">
+                    <thead class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 font-semibold">Descrição</th>
+                            <th scope="col" class="px-6 py-3 font-semibold">Vencimento</th>
+                            <th scope="col" class="px-6 py-3 font-semibold">Status</th>
+                            <th scope="col" class="px-6 py-3 text-right font-semibold">Valor</th>
+                            <th scope="col" class="px-6 py-3"><span class="sr-only">Ações</span></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr v-for="expense in expenses.data" :key="expense.id" class="hover:bg-gray-50">
+                            <td class="px-6 py-4 font-medium text-gray-900">{{ expense.description }}</td>
+                            <td class="px-6 py-4 text-gray-600 tabular-nums">{{ formatDate(expense.due_on) }}</td>
+                            <td class="px-6 py-4">
+                                <span
+                                    class="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                                    :class="expense.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'"
+                                >
+                                    {{ expense.status_label }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right text-gray-900 tabular-nums">{{ formatAmount(expense.amount_in_cents) }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-4">
+                                    <button
+                                        v-if="expense.status === 'pending'"
+                                        type="button"
+                                        :disabled="payingExpenseId === expense.id"
+                                        class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-gray-700 hover:bg-gray-100 disabled:opacity-60"
+                                        :aria-label="`Marcar ${expense.description} como pago`"
+                                        @click="markAsPaid(expense)"
+                                    >
+                                        Marcar como pago
+                                    </button>
+                                    <Link
+                                        :href="`/expenses/${expense.id}/edit`"
+                                        class="font-medium text-gray-700 hover:text-gray-900 hover:underline"
+                                        :aria-label="`Editar ${expense.description}`"
+                                    >
+                                        Editar
+                                    </Link>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <nav
                 v-if="expenses.last_page > 1"
