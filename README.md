@@ -1,58 +1,173 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Gym Manager
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema para gerenciar academias: alunos, planos, matrículas, receitas, despesas, conta bancária e relatórios.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 1. Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Parte | Tecnologia |
+|---|---|
+| **Back-end** | [Laravel 13](https://laravel.com/docs) + PHP 8.4 |
+| **Front-end** | [Vue 3](https://vuejs.org) + TypeScript + [Tailwind CSS 4](https://tailwindcss.com) |
+| **Ponte entre os dois** | [Inertia.js v3](https://inertiajs.com) |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+O sistema roda dentro do **Docker**, usando o **[Laravel Sail](https://laravel.com/docs/sail)**. Não sendo preciso instalar outras dependencias localmente alem do docker e git.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 2. Requisitos
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Ferramenta | Para quê | Como conferir |
+|---|---|---|
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Rodar os containers | `docker --version` |
+| [Git](https://git-scm.com/) | Baixar o código | `git --version` |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+---
 
-## Agentic Development
+## 3. Instalação
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 3.1. Clone o projeto
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/lukkas-lukkas/gym-manager.git
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+```bash
+cd gym-manager
+```
 
-## Contributing
+### 3.2. Crie o arquivo de configuração `.env`
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+cp .env.example .env
+```
 
-## Code of Conduct
+### 3.3. Instale as dependências do PHP
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+O Sail fica dentro da pasta `vendor/`, que ainda não existe. Por isso, a primeira instalação usa um container temporário só para rodar o Composer:
 
-## Security Vulnerabilities
+```bash
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html laravelsail/php84-composer:latest composer install --ignore-platform-reqs
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 3.4. Crie um atalho para o Sail (opcional, mas recomendado)
 
-## License
+Sem atalho, todo comando começa com `./vendor/bin/sail`. Com o atalho, vira só `sail`:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+echo "alias sail='sh \$([ -f sail ] && echo sail || echo vendor/bin/sail)'" >> ~/.zshrc && source ~/.zshrc
+```
+
+### 3.5. Suba os containers
+
+```bash
+sail up -d
+```
+
+### 3.6. Configurando a aplicação
+
+```bash
+sail artisan key:generate
+```
+
+Gera a chave de criptografia da aplicação. 
+
+```bash
+sail artisan migrate --seed
+```
+
+Cria as tabelas no banco (**migrate**) e preenche com o mínimo para começar (**seed**):
+
+- 1 usuário para fazer login
+- 1 conta bancária com saldo inicial de R$ 10.000,00
+- 3 alunos (ainda sem matrícula)
+- 3 planos: Mensal, Trimestral e Anual
+- 4 despesas básicas do mês atual, todas pendentes (aluguel, energia, água e internet)
+
+Matrículas e receitas **não** vêm prontas: a ideia é você criar as primeiras pelo próprio sistema (veja a seção 8). Por isso o dashboard e os relatórios começam quase vazios.
+
+```bash
+sail npm install
+```
+
+Instala as dependências do front-end (Vue, Tailwind etc.).
+
+---
+
+### Login
+
+Agora abra no navegador: **http://localhost**
+
+O seed cria um usuário de teste:
+
+| Campo | Valor |
+|---|---|
+| E-mail | `test@example.com` |
+| Senha | `password#123` |
+
+---
+
+## 6. Estrutura do código
+
+```
+app/
+├── Console/Commands/   → comandos agendados (ex.: renovar matrículas vencidas)
+├── Enums/              → listas fixas de valores (status, período de cobrança)
+├── Http/
+│   ├── Controllers/    → recebem a requisição e devolvem a página
+│   └── Requests/       → validação dos formulários
+├── Models/             → tabelas do banco (Member, Enrollment, Revenue...)
+└── Reports/            → cálculos dos relatórios e do dashboard
+
+database/
+├── migrations/         → estrutura das tabelas
+├── factories/          → geradores de dados falsos (usados em testes e seeds)
+└── seeders/            → dados de exemplo
+
+resources/js/
+├── pages/              → uma pasta por tela (members, expenses, revenues...)
+├── components/         → pedaços de tela reaproveitáveis
+├── layouts/            → layout padrão (menu, cabeçalho)
+└── types/              → tipos TypeScript
+
+routes/
+├── web.php             → todas as URLs do sistema
+└── console.php         → agendamento dos comandos
+
+tests/
+├── Feature/            → testes que simulam o uso real (requisição → resposta)
+└── Unit/               → testes de peças isoladas
+```
+
+### Conceitos do domínio
+
+| No código | Na tela | O que é |
+|---|---|---|
+| `Member` | Alunos | Cliente da academia |
+| `MembershipPlan` | Planos | Plano contratável (mensal, trimestral...) |
+| `Enrollment` | Matrículas | Um aluno contratando um plano por um período |
+| `Revenue` | Receitas | Dinheiro a receber (gerado pelas matrículas) |
+| `Expense` | Despesas | Dinheiro a pagar |
+| `BankAccount` | Conta bancária | Onde o saldo é atualizado quando algo é pago |
+
+---
+
+## 9. Tarefas agendadas
+
+O sistema tem dois comandos que rodam automaticamente em produção (definidos em `routes/console.php`):
+
+| Comando | Quando roda | O que faz |
+|---|---|---|
+| `enrollments:roll-over` | A cada hora | Renova as matrículas que venceram |
+| `bank-accounts:verify` | Todo dia às 03:00 | Confere se o saldo da conta bate com os pagamentos |
+
+Localmente, eles **não** rodam sozinhos. Para testar, rode na manualmente:
+
+```bash
+sail artisan enrollments:roll-over
+```
+
+```bash
+sail artisan bank-accounts:verify
+```
