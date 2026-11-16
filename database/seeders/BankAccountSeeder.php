@@ -12,8 +12,7 @@ class BankAccountSeeder extends Seeder
     /**
      * Seed the gym's bank account for local development, opened now with R$ 10.000,00.
      *
-     * Opened now, so the sample payments seeded before it are already inside the opening balance. Skipped when the
-     * account exists, so running it again adds nothing.
+     * Skipped when the account exists, so running it again adds nothing.
      */
     public function run(): void
     {

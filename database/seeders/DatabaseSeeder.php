@@ -12,9 +12,8 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
-     *
-     * Plans come before enrollments, which pick one of them for each member.
+     * Seed the minimum a newcomer needs to start: a user to log in, the bank account, a few members, plans and
+     * this month's basic expenses. Enrollments and revenues are left to be created from the app.
      */
     public function run(): void
     {
@@ -22,7 +21,6 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             MemberSeeder::class,
             MembershipPlanSeeder::class,
-            EnrollmentSeeder::class,
             ExpenseSeeder::class,
             BankAccountSeeder::class,
         ]);
