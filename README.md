@@ -93,6 +93,12 @@ sail npm install
 
 Instala as dependências do front-end (Vue, Tailwind etc.).
 
+```bash
+sail npm run build
+```
+
+Compila o front-end.
+
 ---
 
 ### Login
