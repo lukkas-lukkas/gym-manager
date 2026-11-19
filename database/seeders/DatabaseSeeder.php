@@ -12,17 +12,11 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the minimum a newcomer needs to start: a user to log in, the bank account, a few members, plans and
-     * this month's basic expenses. Enrollments and revenues are left to be created from the app.
+     * Seed a gym with history: a user to log in and a year and a half of members, plans, enrollments, revenues,
+     * expenses and the bank account, so the dashboard and the reports show real-looking numbers from the start.
      */
     public function run(): void
     {
-        $this->call([
-            UserSeeder::class,
-            MemberSeeder::class,
-            MembershipPlanSeeder::class,
-            ExpenseSeeder::class,
-            BankAccountSeeder::class,
-        ]);
+        $this->call(DemoSeeder::class);
     }
 }

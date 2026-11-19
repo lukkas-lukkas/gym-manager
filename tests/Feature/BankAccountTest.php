@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Models\BankAccount;
 use App\Models\User;
-use Database\Seeders\BankAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -51,22 +50,6 @@ class BankAccountTest extends TestCase
         $this->assertSame('Conta', $account->name);
         $this->assertSame(1_000, $account->opening_balance_in_cents);
         $this->assertNull($account->current_balance_in_cents);
-    }
-
-    public function test_seeder_opens_one_account_now_with_the_same_opening_and_current_balance(): void
-    {
-        $this->freezeSecond();
-
-        $this->seed(BankAccountSeeder::class);
-        $this->seed(BankAccountSeeder::class);
-
-        $this->assertSame(1, BankAccount::query()->count());
-
-        $account = BankAccount::current();
-        $this->assertSame('Conta principal', $account->name);
-        $this->assertSame(1_000_000, $account->opening_balance_in_cents);
-        $this->assertSame(1_000_000, $account->current_balance_in_cents);
-        $this->assertTrue($account->opened_at->equalTo(now()));
     }
 
     public function test_guest_cannot_access_the_bank_account(): void

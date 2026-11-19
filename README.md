@@ -8,7 +8,7 @@ Sistema para gerenciar academias: alunos, planos, matrículas, receitas, despesa
 
 | Parte | Tecnologia |
 |---|---|
-| **Back-end** | [Laravel 13](https://laravel.com/docs) + PHP 8.4 |
+| **Back-end** | [Laravel 13](https://laravel.com/docs) + PHP 8.5 |
 | **Front-end** | [Vue 3](https://vuejs.org) + TypeScript + [Tailwind CSS 4](https://tailwindcss.com) |
 | **Ponte entre os dois** | [Inertia.js v3](https://inertiajs.com) |
 
@@ -77,15 +77,20 @@ Gera a chave de criptografia da aplicação.
 sail artisan migrate --seed
 ```
 
-Cria as tabelas no banco (**migrate**) e preenche com o mínimo para começar (**seed**):
+Cria as tabelas no banco (**migrate**) e preenche com uma academia de demonstração (**seed**), com 18 meses de história e 6 meses de contas futuras. Assim o dashboard e os relatórios já abrem com números que parecem reais:
 
 - 1 usuário para fazer login
-- 1 conta bancária com saldo inicial de R$ 10.000,00
-- 3 alunos (ainda sem matrícula)
-- 3 planos: Mensal, Trimestral e Anual
-- 4 despesas básicas do mês atual, todas pendentes (aluguel, energia, água e internet)
+- 1 conta bancária, com o saldo batendo com tudo que foi pago
+- Planos Mensal, Trimestral, Semestral e Anual, mais um Anual Promocional que já saiu de venda
+- Centenas de alunos com o histórico de matrículas: alguns renovam, outros saem, e alguns estão com a mensalidade atrasada
+- Receitas de cada matrícula, pagas no dia ou com alguns dias de atraso
+- Despesas fixas de todo mês (aluguel, folha, energia, água etc.) e algumas avulsas (equipamentos, manutenção, reforma)
 
-Matrículas e receitas **não** vêm prontas: a ideia é você criar as primeiras pelo próprio sistema (veja a seção 8). Por isso o dashboard e os relatórios começam quase vazios.
+Todas as datas são calculadas a partir de hoje. O seed só roda com o banco **vazio**, porque rodar de novo duplicaria tudo. Para recomeçar do zero:
+
+```bash
+sail artisan migrate:fresh --seed
+```
 
 ```bash
 sail npm install
