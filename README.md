@@ -33,17 +33,19 @@ O sistema roda dentro do **Docker**, usando o **[Laravel Sail](https://laravel.c
 git clone https://github.com/lukkas-lukkas/gym-manager.git
 ```
 
+### 3.2. Entre na pasta do projeto
+
 ```bash
 cd gym-manager
 ```
 
-### 3.2. Crie o arquivo de configuração `.env`
+### 3.3. Crie o arquivo de configuração `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-### 3.3. Instale as dependências do PHP
+### 3.4. Instale as dependências do PHP
 
 O Sail fica dentro da pasta `vendor/`, que ainda não existe. Por isso, a primeira instalação usa um container temporário só para rodar o Composer:
 
@@ -51,7 +53,7 @@ O Sail fica dentro da pasta `vendor/`, que ainda não existe. Por isso, a primei
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html laravelsail/php84-composer:latest composer install --ignore-platform-reqs
 ```
 
-### 3.4. Crie um atalho para o Sail (opcional, mas recomendado)
+### 3.5. Crie um atalho para o Sail (opcional, mas recomendado)
 
 Sem atalho, todo comando começa com `./vendor/bin/sail`. Com o atalho, vira só `sail`:
 
@@ -59,25 +61,25 @@ Sem atalho, todo comando começa com `./vendor/bin/sail`. Com o atalho, vira só
 echo "alias sail='sh \$([ -f sail ] && echo sail || echo vendor/bin/sail)'" >> ~/.zshrc && source ~/.zshrc
 ```
 
-### 3.5. Suba os containers
+### 3.6. Suba os containers
 
 ```bash
 sail up -d
 ```
 
-### 3.6. Configurando a aplicação
+### 3.7. Gere a chave de criptografia da aplicação
 
 ```bash
 sail artisan key:generate
 ```
 
-Gera a chave de criptografia da aplicação. 
+### 3.8. Crie as tabelas no banco e preencha com dados de demonstração
 
 ```bash
 sail artisan migrate --seed
 ```
 
-Cria as tabelas no banco (**migrate**) e preenche com uma academia de demonstração (**seed**), com 18 meses de história e 6 meses de contas futuras. Assim o dashboard e os relatórios já abrem com números que parecem reais:
+Este comando cria as tabelas no banco (**migrate**) e preenche com uma academia de demonstração (**seed**), com 18 meses de história e 6 meses de contas futuras. Assim o dashboard e os relatórios já abrem com números que parecem reais:
 
 - 1 usuário para fazer login
 - 1 conta bancária, com o saldo batendo com tudo que foi pago
@@ -86,23 +88,19 @@ Cria as tabelas no banco (**migrate**) e preenche com uma academia de demonstra�
 - Receitas de cada matrícula, pagas no dia ou com alguns dias de atraso
 - Despesas fixas de todo mês (aluguel, folha, energia, água etc.) e algumas avulsas (equipamentos, manutenção, reforma)
 
-Todas as datas são calculadas a partir de hoje. O seed só roda com o banco **vazio**, porque rodar de novo duplicaria tudo. Para recomeçar do zero:
+Todas as datas são calculadas a partir de hoje. O seed só roda com o banco **vazio**, porque rodar de novo duplicaria tudo. Para recomeçar do zero: `sail artisan migrate:fresh --seed`
 
-```bash
-sail artisan migrate:fresh --seed
-```
+### 3.9. Instale as dependências do front-end (Vue, Tailwind etc.)
 
 ```bash
 sail npm install
 ```
 
-Instala as dependências do front-end (Vue, Tailwind etc.).
+### 3.10. Compile o front-end
 
 ```bash
 sail npm run build
 ```
-
-Compila o front-end.
 
 ---
 
