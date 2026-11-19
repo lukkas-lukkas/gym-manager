@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
+import AppLogoIcon from '../../components/AppLogoIcon.vue';
 </script>
 
 <template>
@@ -9,9 +10,7 @@ import { Form, Head } from '@inertiajs/vue3';
         <div class="flex w-full max-w-sm flex-col gap-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
             <div class="flex flex-col items-center gap-3">
                 <div class="flex size-12 items-center justify-center rounded-xl bg-gray-900 text-white" aria-hidden="true">
-                    <svg class="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11" />
-                    </svg>
+                    <AppLogoIcon class="size-7" />
                 </div>
                 <h1 class="text-2xl font-semibold text-gray-900">Entrar</h1>
             </div>

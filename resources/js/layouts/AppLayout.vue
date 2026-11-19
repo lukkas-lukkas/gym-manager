@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { onMounted, onUnmounted, ref } from 'vue';
+import AppLogoIcon from '../components/AppLogoIcon.vue';
 
 /**
  * A sidebar menu entry. Items without `href` don't have a page yet and are shown as "em breve".
@@ -80,9 +81,7 @@ onUnmounted(() => {
             <div class="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-5">
                 <Link href="/" class="flex items-center gap-3">
                     <span class="flex size-9 items-center justify-center rounded-lg bg-gray-900 text-white" aria-hidden="true">
-                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11" />
-                        </svg>
+                        <AppLogoIcon class="size-5" />
                     </span>
                     <span class="truncate font-semibold">{{ page.props.name }}</span>
                 </Link>
